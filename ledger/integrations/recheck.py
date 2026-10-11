@@ -58,7 +58,7 @@ class ConfiguredRechecker:
             )
             added = True
             for commit_sha in commit_shas:
-                self._run(["git", "cherry-pick", commit_sha], cwd=worktree)
+                self._cherry_pick(commit_sha, worktree)
 
             config = TargetConfig.model_validate_json(
                 (worktree / ".promise-ledger.json").read_text()
@@ -88,6 +88,20 @@ class ConfiguredRechecker:
     def _run_command(self, command: list[str], worktree: Path, database: Path) -> None:
         expanded = [part.replace("{database}", str(database)) for part in command]
         self._run(expanded, cwd=worktree)
+
+    def _cherry_pick(self, commit_sha: str, worktree: Path) -> None:
+        self._run(
+            [
+                "git",
+                "-c",
+                "user.name=Khushal Kumar",
+                "-c",
+                "user.email=kkhushal1531@gmail.com",
+                "cherry-pick",
+                commit_sha,
+            ],
+            cwd=worktree,
+        )
 
     def _run(self, command: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
         return self.runner(

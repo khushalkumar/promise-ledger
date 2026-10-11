@@ -1,9 +1,40 @@
 import sqlite3
+import subprocess
+from pathlib import Path
 
 from ledger import orchestrator
+from ledger.integrations.recheck import ConfiguredRechecker
 from ledger.models import PromiseKind, Verdict
 from ledger.orchestrator import recheck_ledger, run_ledger
 from tests.test_orchestrator import demo_context, promise
+
+
+def test_rechecker_cherry_pick_uses_explicit_khushal_identity(tmp_path):
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    rechecker = ConfiguredRechecker(
+        source_repository=tmp_path,
+        worktree_root=tmp_path / "worktrees",
+        runner=runner,
+    )
+
+    rechecker._cherry_pick("abc123", Path(tmp_path))
+
+    assert commands == [
+        [
+            "git",
+            "-c",
+            "user.name=Khushal Kumar",
+            "-c",
+            "user.email=kkhushal1531@gmail.com",
+            "cherry-pick",
+            "abc123",
+        ]
+    ]
 
 
 def test_recheck_executes_only_affected_probes_and_reuses_other_evidence(tmp_path, monkeypatch):
