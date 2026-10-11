@@ -5,12 +5,15 @@ description = "Evidence-backed contract promise verification agent"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "fastapi>=0.118,<1",
+  "jinja2>=3.1,<4",
   "neatlogs[openai]>=1.4.26,<2",
   "openai>=2.54,<3",
   "pydantic>=2.11,<3",
   "pypdf>=6.1,<7",
   "python-hcl2>=7.3,<8",
   "typer>=0.16,<1",
+  "uvicorn>=0.37,<1",
 ]
 
 [dependency-groups]
@@ -22,6 +25,7 @@ dev = [
 
 [project.scripts]
 ledger = "ledger.cli:app"
+ledger-ui = "ledger.web:main"
 
 [build-system]
 requires = ["hatchling>=1.27"]

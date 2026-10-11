@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Promise Ledger - Evidence-backed contract checks</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/ledger.css') }}">
+  </head>
+  <body>
+    <header class="masthead">
+      <a class="brand" href="#top" aria-label="Promise Ledger home">
+        <span class="brand-mark" aria-hidden="true">PL</span>
+        <span>
+          <strong>Promise Ledger</strong>
+          <small>Contract truth, checked against the system</small>
+        </span>
+      </a>
+      <div class="run-meta">
+        <span class="pulse" aria-hidden="true"></span>
+        <span>Verified artifact</span>
+        <code>{{ evidence_name }}</code>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="run-thesis" aria-labelledby="run-title">
+        <div>
+          <p class="eyebrow">Tasklane / live contract audit</p>
+          <h1 id="run-title">Every promise gets a chain of proof.</h1>
+          <p class="lede">
+            Three agreements became nine testable obligations. The ledger keeps the clause,
+            system evidence, recovery path, and verdict together so every red signal can be
+            challenged.
+          </p>
+        </div>
+        <dl class="run-tally" aria-label="Audit summary">
+          <div class="tally tally-alert">
+            <dt>Red signals</dt>
+            <dd>{{ red_signals }}</dd>
+          </div>
+          <div class="tally">
+            <dt>Promises</dt>
+            <dd>{{ reports|length }}</dd>
+          </div>
+          <div class="tally">
+            <dt>Source documents</dt>
+            <dd>{{ document_count }}</dd>
+          </div>
+          <div class="tally">
+            <dt>Unverifiable</dt>
+            <dd>{{ counts.get('unverifiable', 0) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      {% if conflicts %}
+      <section class="conflict-strip" aria-labelledby="conflict-title">
+        <div class="conflict-label">
+          <span>Document conflict</span>
+          <strong id="conflict-title">Policy and contract disagree</strong>
+        </div>
+        {% for conflict in conflicts %}
+        <article>
+          <code>{{ conflict.id }}</code>
+          <p>{{ conflict.detail }}</p>
+          <span>{{ conflict.promise_ids|join(' ↔ ') }}</span>
+        </article>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      <section class="ledger" aria-labelledby="ledger-title">
+        <header class="section-heading">
+          <div>
+            <p class="eyebrow">Evidence register</p>
+            <h2 id="ledger-title">Nine promises, no hidden reasoning</h2>
+          </div>
+          <div class="legend" aria-label="Verdict legend">
+            <span><i class="dot holds"></i>Holds</span>
+            <span><i class="dot violated"></i>Violated</span>
+            <span><i class="dot unverifiable"></i>Unverifiable</span>
+          </div>
+        </header>
+
+        <div class="promise-grid">
+          {% for report in reports %}
+          <article class="promise-card verdict-{{ report.verdict }}">
+            <header class="promise-header">
+              <div>
+                <code class="promise-id">{{ report.promise.id }}</code>
+                <p>{{ report.promise.kind|replace('_', ' ') }}</p>
+              </div>
+              <span class="verdict">{{ report.verdict|replace('_', ' ') }}</span>
+            </header>
+
+            <h3>{{ report.promise.object }}</h3>
+            <blockquote>
+              <p>“{{ report.promise.source.text }}”</p>
+              <footer>
+                {{ report.promise.source.document }} · §{{ report.promise.source.clause }}
+              </footer>
+            </blockquote>
+
+            <div class="evidence-chain" aria-label="Evidence chain">
+              {% if report.runs %}
+                {% for run in report.runs %}
+                <div class="evidence-node outcome-{{ run.effective.outcome }}">
+                  <span class="node-state">{{ run.effective.outcome }}</span>
+                  <div>
+                    <code>{{ run.effective.probe_id }}</code>
+                    <p>{{ run.effective.detail }}</p>
+                    {% if run.fallback %}
+                    <small>Recovered after {{ run.primary.detail }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="evidence-node outcome-empty">
+                  <span class="node-state">?</span>
+                  <div>
+                    <code>No grounded probe</code>
+                    <p>The ledger needs an owner and an authoritative evidence source.</p>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <span>el el ems · neatHack 2026</span>
+      <span>Every verdict is reproducible from the saved evidence artifact.</span>
+    </footer>
+  </body>
+</html>
