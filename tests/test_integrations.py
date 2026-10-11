@@ -182,6 +182,8 @@ def test_codex_coding_agent_bypasses_pretrusted_hooks_for_automation(tmp_path):
     agent.implement(worktree=worktree, root_cause=cause, prompt="Fix it")
 
     assert "--dangerously-bypass-hook-trust" in commands[0]
+    assert "--approve-for-me" in commands[0]
+    assert "--sandbox" not in commands[0]
 
 
 def test_codex_coding_agent_surfaces_cli_failure_without_command_dump(tmp_path):

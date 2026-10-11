@@ -42,8 +42,6 @@ class CodexCodingAgent:
                 "exec",
                 "--json",
                 "--approve-for-me",
-                "--sandbox",
-                "workspace-write",
                 "--dangerously-bypass-hook-trust",
                 "--cd",
                 str(worktree),
