@@ -4,6 +4,7 @@ from collections.abc import Callable
 import neatlogs
 
 from ledger.models import Probe, ProbeOutcome, ProbeResult, ProbeRun
+from ledger.tracing import current_trace_id
 
 ProbeExecutor = Callable[[Probe], tuple[ProbeOutcome, str]]
 
@@ -29,4 +30,5 @@ def _execute(probe: Probe, executor: ProbeExecutor) -> ProbeResult:
         outcome=outcome,
         evidence_sha256=hashlib.sha256(detail.encode()).hexdigest(),
         detail=detail,
+        trace_id=current_trace_id(),
     )

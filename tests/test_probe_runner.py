@@ -1,4 +1,5 @@
 from ledger.models import Probe, ProbeKind, ProbeOutcome
+from ledger.probes import runner
 from ledger.probes.runner import run_probe
 
 
@@ -65,3 +66,20 @@ def test_evidence_hash_is_deterministic():
     assert first.primary.evidence_sha256 == second.primary.evidence_sha256
     assert len(first.primary.evidence_sha256) == 64
 
+
+def test_probe_evidence_keeps_the_active_neatlogs_trace_id(monkeypatch):
+    trace_id = "0123456789abcdef0123456789abcdef"
+    monkeypatch.setattr(runner, "current_trace_id", lambda: trace_id)
+
+    execution = run_probe(
+        probe(fallback=terraform_fallback()),
+        lambda current: (
+            (ProbeOutcome.ERROR, "AccessDenied")
+            if current.id == "P-017-cloud"
+            else (ProbeOutcome.PASS, "Terraform expiration is 30 days")
+        ),
+    )
+
+    assert execution.primary.trace_id == trace_id
+    assert execution.fallback is not None
+    assert execution.fallback.trace_id == trace_id
