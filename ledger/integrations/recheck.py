@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 import tempfile
 from collections.abc import Callable
@@ -58,6 +59,7 @@ class ConfiguredRechecker:
             )
             added = True
             for commit_sha in commit_shas:
+                self._fetch_commit(commit_sha)
                 self._cherry_pick(commit_sha, worktree)
 
             config = TargetConfig.model_validate_json(
@@ -101,6 +103,14 @@ class ConfiguredRechecker:
                 commit_sha,
             ],
             cwd=worktree,
+        )
+
+    def _fetch_commit(self, commit_sha: str) -> None:
+        if not re.fullmatch(r"[0-9a-f]{40}", commit_sha):
+            raise ValueError(f"invalid remediation commit SHA: {commit_sha}")
+        self._run(
+            ["git", "fetch", "origin", commit_sha],
+            cwd=self.source_repository,
         )
 
     def _run(self, command: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:

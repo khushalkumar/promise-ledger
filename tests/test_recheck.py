@@ -37,6 +37,25 @@ def test_rechecker_cherry_pick_uses_explicit_khushal_identity(tmp_path):
     ]
 
 
+def test_rechecker_fetches_each_pr_commit_before_cherry_pick(tmp_path):
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    rechecker = ConfiguredRechecker(
+        source_repository=tmp_path,
+        worktree_root=tmp_path / "worktrees",
+        runner=runner,
+    )
+
+    commit_sha = "a" * 40
+    rechecker._fetch_commit(commit_sha)
+
+    assert commands == [["git", "fetch", "origin", commit_sha]]
+
+
 def test_recheck_executes_only_affected_probes_and_reuses_other_evidence(tmp_path, monkeypatch):
     context = demo_context(tmp_path)
     promises = [promise("P-014", PromiseKind.DELETION_DEADLINE, "customer personal data")]
