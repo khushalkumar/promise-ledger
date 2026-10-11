@@ -5,6 +5,9 @@ from typing import Annotated
 
 import typer
 
+from ledger.agents.extractor import extract_promises
+from ledger.documents import load_document
+from ledger.llm import AzureJsonBackend
 from ledger.models import Promise
 from ledger.orchestrator import run_ledger
 from ledger.probes.executors import ProbeContext
@@ -16,6 +19,35 @@ app = typer.Typer(no_args_is_help=True)
 @app.callback()
 def main() -> None:
     """Check contractual promises against a target system."""
+
+
+@app.command("extract")
+def extract_command(
+    document: Annotated[
+        list[Path],
+        typer.Option(exists=True, dir_okay=False, help="Contract or policy to extract"),
+    ],
+    output: Annotated[Path, typer.Option(dir_okay=False)],
+) -> None:
+    tracing_enabled = initialize_tracing(os.getenv("NEATLOGS_API_KEY"))
+    try:
+        backend = AzureJsonBackend.from_env()
+        promises: list[Promise] = []
+        for path in document:
+            promises.extend(
+                extract_promises(
+                    load_document(path),
+                    backend,
+                    starting_index=len(promises) + 1,
+                )
+            )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps([item.model_dump(mode="json") for item in promises], indent=2) + "\n"
+        )
+        typer.echo(f"Extracted {len(promises)} promises to {output}")
+    finally:
+        finish_tracing(tracing_enabled)
 
 
 @app.command("run")

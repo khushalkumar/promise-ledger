@@ -3,6 +3,7 @@ import json
 from typer.testing import CliRunner
 
 from ledger.cli import app
+from ledger.llm import AzureJsonBackend
 from ledger.models import Promise, PromiseKind, SourceSpan
 from tests.test_orchestrator import demo_context, promise
 
@@ -55,3 +56,71 @@ def test_run_command_prints_ledger_and_writes_json_evidence(tmp_path):
         "unverifiable",
     ]
 
+
+def test_extract_command_loads_multiple_documents_and_writes_promises(tmp_path, monkeypatch):
+    first = tmp_path / "first.md"
+    second = tmp_path / "second.md"
+    first.write_text("Delete customer data within 30 days.")
+    second.write_text("Store European customer data only in eu-west-1.")
+    payloads = iter(
+        [
+            {
+                "promises": [
+                    {
+                        "kind": "deletion_deadline",
+                        "actor": "Tasklane",
+                        "object": "customer data",
+                        "includes": [],
+                        "trigger": "contract.terminated",
+                        "deadline_days": 30,
+                        "clause": "7.2",
+                        "text": "Delete customer data within 30 days.",
+                    }
+                ]
+            },
+            {
+                "promises": [
+                    {
+                        "kind": "data_residency",
+                        "actor": "Tasklane",
+                        "object": "European customer data",
+                        "includes": [],
+                        "trigger": None,
+                        "deadline_days": None,
+                        "clause": "9.1",
+                        "text": "Store European customer data only in eu-west-1.",
+                    }
+                ]
+            },
+        ]
+    )
+
+    class StubBackend:
+        def complete_json(self, system: str, user: str) -> str:
+            return json.dumps(next(payloads))
+
+    monkeypatch.setattr(
+        AzureJsonBackend,
+        "from_env",
+        classmethod(lambda cls: StubBackend()),
+    )
+    output = tmp_path / "promises.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "extract",
+            "--document",
+            str(first),
+            "--document",
+            str(second),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Extracted 2 promises" in result.output
+    promises = json.loads(output.read_text())
+    assert [item["id"] for item in promises] == ["P-001", "P-002"]
+    assert [item["source"]["document"] for item in promises] == ["first.md", "second.md"]

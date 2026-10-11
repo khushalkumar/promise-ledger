@@ -20,6 +20,10 @@ class PromiseKind(StrEnum):
     RETENTION_LIMIT = "retention_limit"
     DATA_RESIDENCY = "data_residency"
     NOTICE_PERIOD = "notice_period"
+    FEATURE_ENTITLEMENT = "feature_entitlement"
+    AVAILABILITY_SLO = "availability_slo"
+    ENCRYPTION_AT_REST = "encryption_at_rest"
+    ADMIN_MFA = "admin_mfa"
 
 
 class Verdict(StrEnum):
