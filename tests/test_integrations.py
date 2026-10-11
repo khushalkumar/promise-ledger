@@ -2,6 +2,8 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from ledger.integrations.codex import CodexCodingAgent
 from ledger.integrations.github import GhPullRequests
 from ledger.integrations.workspace import GitWorkspace
@@ -151,3 +153,54 @@ def test_codex_coding_agent_runs_headless_with_schema_and_captures_session(tmp_p
     assert result.session_id == "thread-123"
     assert result.changed_files == ["app.py", "tests/test_app.py"]
     assert result.tests == ["uv run pytest -q"]
+
+
+def test_codex_coding_agent_bypasses_pretrusted_hooks_for_automation(tmp_path):
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        output_path = Path(command[command.index("--output-last-message") + 1])
+        output_path.write_text(
+            json.dumps({"summary": "fixed", "changed_files": ["app.py"], "tests": []})
+        )
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    agent = CodexCodingAgent(binary="codex", runner=runner)
+    cause = RootCause(
+        id="rc-1",
+        promise_id="P-014",
+        probe_ids=["probe-1"],
+        category="source_code",
+        file_path="app.py",
+        summary="Bug.",
+        fix_goal="Fix bug.",
+    )
+
+    agent.implement(worktree=worktree, root_cause=cause, prompt="Fix it")
+
+    assert "--dangerously-bypass-hook-trust" in commands[0]
+
+
+def test_codex_coding_agent_surfaces_cli_failure_without_command_dump(tmp_path):
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+
+    def runner(command, **kwargs):
+        raise subprocess.CalledProcessError(2, command, stderr="Hooks need review")
+
+    agent = CodexCodingAgent(binary="codex", runner=runner)
+    cause = RootCause(
+        id="rc-1",
+        promise_id="P-014",
+        probe_ids=["probe-1"],
+        category="source_code",
+        file_path="app.py",
+        summary="Bug.",
+        fix_goal="Fix bug.",
+    )
+
+    with pytest.raises(RuntimeError, match="Codex coding agent failed: Hooks need review"):
+        agent.implement(worktree=worktree, root_cause=cause, prompt="Fix it")

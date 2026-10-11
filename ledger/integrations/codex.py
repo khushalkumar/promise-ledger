@@ -44,6 +44,7 @@ class CodexCodingAgent:
                 "--approve-for-me",
                 "--sandbox",
                 "workspace-write",
+                "--dangerously-bypass-hook-trust",
                 "--cd",
                 str(worktree),
                 "--output-schema",
@@ -52,14 +53,18 @@ class CodexCodingAgent:
                 str(output_path),
                 "-",
             ]
-            completed = self.runner(
-                command,
-                input=prompt,
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_seconds,
-            )
+            try:
+                completed = self.runner(
+                    command,
+                    input=prompt,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout_seconds,
+                )
+            except subprocess.CalledProcessError as error:
+                detail = (error.stderr or error.stdout or f"exit code {error.returncode}").strip()
+                raise RuntimeError(f"Codex coding agent failed: {detail[-4000:]}") from error
             output = AgentChangeOutput.model_validate_json(output_path.read_text())
 
         for changed in output.changed_files:
