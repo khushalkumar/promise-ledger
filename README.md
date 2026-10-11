@@ -88,10 +88,12 @@ Then visit `http://127.0.0.1:8000`.
 ## Evidence
 
 - `evidence/run_live_audit.json` - saved live Azure extraction plus deterministic verdicts.
+- `evidence/run_entire_graph.json` - traced deterministic run with ranked Entire Graph inventory hits.
 - `evidence/run_nine_baseline.json` - repeatable model-free baseline.
 - `evidence/extraction_drift_split.json` - a recorded model-drift case handled by deterministic deduplication.
 - `evidence/benchmark.json` - deterministic v1 vs. v2 compiler comparison over ten seeded cases.
 - `evidence/neatlogs.md` - trace IDs, runtime coverage, benchmark evidence, and verification boundary.
+- `evidence/entire.md` - runtime Entire Graph evidence plus the explicit checkpoint-capture boundary.
 - `evidence/run_final.md` - compact judge-facing audit, remediation, improvement, and economics index.
 - `evidence/run_remediated.json` - combined re-check of the two open remediation PRs.
 - `evidence/remediation.md` - exact PR, commit, and verification chain.

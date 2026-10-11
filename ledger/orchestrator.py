@@ -13,7 +13,17 @@ from ledger.verdict import evaluate_verdict
 
 @neatlogs.span(kind="WORKFLOW", name="ledger_run")
 def run_ledger(promises: Sequence[Promise], context: ProbeContext) -> LedgerRun:
-    assets = build_inventory(context)
+    graph_query = " ".join(
+        [
+            "contract compliance",
+            *(
+                f"{promise.kind} {promise.object} {' '.join(promise.includes)} "
+                f"{promise.source.text}"
+                for promise in promises
+            ),
+        ]
+    )[:1000]
+    assets = build_inventory(context, graph_query=graph_query)
     reports = []
     for promise in promises:
         probes = compile_checks(promise, assets)
@@ -27,4 +37,8 @@ def run_ledger(promises: Sequence[Promise], context: ProbeContext) -> LedgerRun:
                 verdict=verdict,
             )
         )
-    return LedgerRun(reports=reports, conflicts=detect_conflicts(promises))
+    return LedgerRun(
+        reports=reports,
+        conflicts=detect_conflicts(promises),
+        inventory=assets,
+    )

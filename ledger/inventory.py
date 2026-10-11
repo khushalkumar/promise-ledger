@@ -2,12 +2,15 @@ import sqlite3
 
 import neatlogs
 
+from ledger.entire_graph import search_entire_graph
 from ledger.models import AssetMap
 from ledger.probes.executors import ProbeContext
 
 
 @neatlogs.span(kind="TOOL", name="system_inventory")
-def build_inventory(context: ProbeContext) -> AssetMap:
+def build_inventory(
+    context: ProbeContext, *, graph_query: str = "contract compliance"
+) -> AssetMap:
     with sqlite3.connect(context.database) as connection:
         table_names = [
             row[0]
@@ -41,4 +44,5 @@ def build_inventory(context: ProbeContext) -> AssetMap:
         source_files=source_files,
         terraform_files=terraform_files,
         config_files=config_files,
+        entire_graph_hits=search_entire_graph(context.target_root, graph_query),
     )

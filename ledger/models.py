@@ -50,11 +50,21 @@ class Promise(BaseModel):
     source: SourceSpan
 
 
+class EntireGraphHit(BaseModel):
+    rank: int
+    score: float
+    file_path: str
+    start_line: int
+    end_line: int
+    symbol_name: str | None = None
+
+
 class AssetMap(BaseModel):
     tenant_tables: list[str]
     source_files: list[str]
     terraform_files: list[str]
     config_files: list[str] = Field(default_factory=list)
+    entire_graph_hits: list[EntireGraphHit] = Field(default_factory=list)
 
 
 class Probe(BaseModel):
@@ -112,3 +122,4 @@ class LedgerRun(BaseModel):
     reports: list[PromiseReport]
     conflicts: list[PromiseConflict] = Field(default_factory=list)
     metrics: RunMetrics | None = None
+    inventory: AssetMap | None = None
