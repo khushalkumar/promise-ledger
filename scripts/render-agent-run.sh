@@ -20,6 +20,10 @@ for name in "${required[@]}"; do
   fi
 done
 
+# Render already isolates this disposable container and per-run Git worktree. Codex's
+# nested bubblewrap sandbox is unavailable there, so bypass only the inner sandbox.
+export PROMISE_LEDGER_CODEX_EXTERNAL_SANDBOX=true
+
 workspace="${PROMISE_LEDGER_WORKSPACE:-/tmp/promise-ledger-runs}"
 mkdir -p "${workspace}"
 run_id="${PROMISE_LEDGER_RUN_ID}"

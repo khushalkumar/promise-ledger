@@ -190,6 +190,9 @@ Responses endpoint through a custom provider. The `api-key` header is populated 
 `PROMISE_LEDGER_AZURE_API_KEY`; the secret is never placed in the process command.
 The deployment is intentionally locked to `gpt-5.6-sol` with high reasoning so hosted
 and local remediation use the same tested model.
+The Render runner sets `PROMISE_LEDGER_CODEX_EXTERNAL_SANDBOX=true` because Render
+already isolates the disposable container and Codex's nested Linux sandbox cannot start
+there. Local runs keep Codex's workspace-write sandbox and automatic approval review.
 
 See `docs/gcp-deployment.md` for GCP IAM and secret setup. No secret value belongs in source control.
 

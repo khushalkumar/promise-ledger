@@ -47,7 +47,7 @@ class CodexCodingAgent:
                 "--ignore-user-config",
                 *_azure_provider_arguments(),
                 "--json",
-                "--approve-for-me",
+                *_execution_policy_arguments(),
                 "--dangerously-bypass-hook-trust",
                 "--cd",
                 str(worktree),
@@ -133,6 +133,12 @@ def _azure_provider_arguments() -> list[str]:
         "--config",
         'model_providers.promise_ledger_azure.wire_api="responses"',
     ]
+
+
+def _execution_policy_arguments() -> list[str]:
+    if os.getenv("PROMISE_LEDGER_CODEX_EXTERNAL_SANDBOX", "").lower() == "true":
+        return ["--dangerously-bypass-approvals-and-sandbox"]
+    return ["--approve-for-me"]
 
 
 def _thread_id(json_lines: str) -> str | None:

@@ -242,6 +242,39 @@ def test_codex_coding_agent_uses_azure_responses_provider_from_environment(
     assert "secret-not-in-command" not in " ".join(command)
 
 
+def test_codex_coding_agent_bypasses_inner_sandbox_only_when_externally_isolated(
+    tmp_path, monkeypatch
+):
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        output_path = Path(command[command.index("--output-last-message") + 1])
+        output_path.write_text(
+            json.dumps({"summary": "fixed", "changed_files": ["app.py"], "tests": []})
+        )
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setenv("PROMISE_LEDGER_CODEX_EXTERNAL_SANDBOX", "true")
+    agent = CodexCodingAgent(binary="codex", runner=runner)
+    cause = RootCause(
+        id="rc-1",
+        promise_id="P-014",
+        probe_ids=["probe-1"],
+        category="source_code",
+        file_path="app.py",
+        summary="Bug.",
+        fix_goal="Fix bug.",
+    )
+
+    agent.implement(worktree=worktree, root_cause=cause, prompt="Fix it")
+
+    assert "--dangerously-bypass-approvals-and-sandbox" in commands[0]
+    assert "--approve-for-me" not in commands[0]
+
+
 def test_codex_coding_agent_rejects_non_sol_azure_deployment(monkeypatch):
     monkeypatch.setenv("PROMISE_LEDGER_AZURE_ENDPOINT", "https://example.openai.azure.com/")
     monkeypatch.setenv("PROMISE_LEDGER_AZURE_API_KEY", "secret")

@@ -304,6 +304,7 @@ def test_render_agent_script_uses_azure_codex_and_stable_run_id():
     assert "PROMISE_LEDGER_RUN_ID" in script
     assert "PROMISE_LEDGER_AZURE_API_KEY" in script
     assert "PROMISE_LEDGER_AZURE_REASONING_EFFORT" in script
+    assert "PROMISE_LEDGER_CODEX_EXTERNAL_SANDBOX=true" in script
     assert "OPENAI_API_KEY" not in script
     assert '--run-id "${run_id}"' in script
     assert 'gh repo clone "${TARGET_REPOSITORY}"' in script
