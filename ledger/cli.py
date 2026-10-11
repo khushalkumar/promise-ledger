@@ -60,7 +60,10 @@ def extract_command(
 @app.command("audit")
 def audit_command(
     target: Annotated[Path, typer.Option(exists=True, file_okay=False)],
-    database: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
+    database: Annotated[
+        str,
+        typer.Option(help="SQLite path or SQLAlchemy PostgreSQL URL"),
+    ],
     document: Annotated[
         list[Path],
         typer.Option(exists=True, dir_okay=False, help="Contract or policy to audit"),
@@ -120,7 +123,10 @@ def bench_command(
 @app.command("run")
 def run_command(
     target: Annotated[Path, typer.Option(exists=True, file_okay=False)],
-    database: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
+    database: Annotated[
+        str,
+        typer.Option(help="SQLite path or SQLAlchemy PostgreSQL URL"),
+    ],
     promises: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
     output: Annotated[Path, typer.Option(dir_okay=False)],
 ) -> None:

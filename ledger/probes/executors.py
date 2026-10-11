@@ -1,21 +1,22 @@
 import ast
 import json
 import re
-import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import hcl2
+from sqlalchemy import text
 
+from ledger.database import create_database_engine, database_url
 from ledger.models import Probe, ProbeOutcome
 
 
 @dataclass(frozen=True)
 class ProbeContext:
     target_root: Path
-    database: Path
+    database: str | Path
 
 
 def execute_probe(probe: Probe, context: ProbeContext) -> tuple[ProbeOutcome, str]:
@@ -47,16 +48,24 @@ def _no_rows_after_deadline(
 
     deadline_days = int(probe.params["deadline_days"])
     cutoff = (datetime.fromisoformat(str(probe.params["now"])) - timedelta(days=deadline_days))
-    with sqlite3.connect(context.database) as connection:
-        count = connection.execute(
-            f"""
+    cutoff_value = (
+        cutoff
+        if database_url(context.database).startswith("postgresql")
+        else cutoff.isoformat()
+    )
+    engine = create_database_engine(context.database)
+    with engine.connect() as connection:
+        count = connection.scalar(
+            text(
+                f"""
             SELECT COUNT(*)
             FROM {table} AS customer_data
             JOIN tenants ON tenants.id = customer_data.tenant_id
-            WHERE tenants.terminated_at IS NOT NULL AND tenants.terminated_at <= ?
+            WHERE tenants.terminated_at IS NOT NULL AND tenants.terminated_at <= :cutoff
             """,
-            (cutoff.isoformat(),),
-        ).fetchone()[0]
+            ),
+            {"cutoff": cutoff_value},
+        )
 
     detail = f"{table} has {count} row(s) past the {deadline_days}-day deadline"
     outcome = ProbeOutcome.PASS if count == 0 else ProbeOutcome.FAIL

@@ -1,7 +1,7 @@
-import sqlite3
-
 import neatlogs
+from sqlalchemy import inspect
 
+from ledger.database import create_database_engine
 from ledger.entire_graph import search_entire_graph
 from ledger.models import AssetMap
 from ledger.probes.executors import ProbeContext
@@ -11,21 +11,13 @@ from ledger.probes.executors import ProbeContext
 def build_inventory(
     context: ProbeContext, *, graph_query: str = "contract compliance"
 ) -> AssetMap:
-    with sqlite3.connect(context.database) as connection:
-        table_names = [
-            row[0]
-            for row in connection.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
-            )
-        ]
-        tenant_tables = [
-            table
-            for table in table_names
-            if any(
-                column[1] == "tenant_id"
-                for column in connection.execute(f'PRAGMA table_info("{table}")')
-            )
-        ]
+    database_inspector = inspect(create_database_engine(context.database))
+    table_names = sorted(database_inspector.get_table_names())
+    tenant_tables = [
+        table
+        for table in table_names
+        if any(column["name"] == "tenant_id" for column in database_inspector.get_columns(table))
+    ]
 
     source_root = context.target_root / "tasklane"
     source_files = sorted(
