@@ -4,7 +4,7 @@ import json
 from typing import Protocol
 
 import neatlogs
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from ledger.documents import LoadedDocument
 from ledger.models import Promise, PromiseKind, SourceSpan
@@ -33,6 +33,9 @@ SYSTEM_PROMPT = """You extract auditable promises from contracts and policies.
 Return JSON only. Extract an item only when the document explicitly commits an actor to an
 obligation. Preserve a short exact supporting quote in text and the printed clause identifier.
 Do not infer missing deadlines, triggers, locations, or included asset types.
+Use a concise, specific noun phrase for object. For example, use "SSO configuration",
+"monthly service availability and credits", "customer data", or "administrative accounts"
+instead of generic words such as "service" or "requirement".
 Use these kinds:
 - deletion_deadline: deletion must happen within a deadline after a trigger.
 - retention_limit: data, snapshots, or backups must not remain beyond a maximum duration.
@@ -61,11 +64,21 @@ def extract_promises(
         f"Document text:\n{document.text}"
     )
     raw = backend.complete_json(SYSTEM_PROMPT, user_prompt)
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError as error:
-        raise ValueError("Model response was not valid JSON") from error
-    batch = ExtractionBatch.model_validate(payload)
+    batch: ExtractionBatch | None = None
+    last_error: json.JSONDecodeError | ValidationError | None = None
+    for attempt in range(2):
+        try:
+            batch = ExtractionBatch.model_validate(json.loads(raw))
+            break
+        except (json.JSONDecodeError, ValidationError) as error:
+            last_error = error
+            if attempt == 0:
+                raw = backend.complete_json(
+                    "Repair the response into valid JSON matching the supplied schema. JSON only.",
+                    f"Original request:\n{user_prompt}\n\nInvalid response:\n{raw}",
+                )
+    if batch is None:
+        raise ValueError("Model response was not valid JSON after one repair") from last_error
     return [
         Promise(
             id=f"P-{index:03d}",

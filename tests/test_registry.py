@@ -50,3 +50,35 @@ def test_registry_rejects_an_unrecognized_extraction():
 
     with pytest.raises(ValueError, match="No canonical promise id"):
         assign_canonical_ids([extracted], {})
+
+
+def test_registry_merges_split_extractions_from_the_same_clause():
+    items = [
+        Promise.model_validate(
+            {
+                "id": f"P-00{index}",
+                "kind": "retention_limit",
+                "actor": "Tasklane",
+                "object": object_name,
+                "includes": [object_name] if object_name == "backups" else [],
+                "deadline_days": 90,
+                "source": {
+                    "document": "privacy_policy.md",
+                    "clause": "5. Data retention",
+                    "text": "retain customer personal data and backups for up to 90 days",
+                },
+            }
+        )
+        for index, object_name in enumerate(
+            ["customer personal data", "backups"],
+            start=1,
+        )
+    ]
+    registry = {"privacy_policy.md|5|retention_limit": "P-044"}
+
+    assigned = assign_canonical_ids(items, registry)
+
+    assert len(assigned) == 1
+    assert assigned[0].id == "P-044"
+    assert assigned[0].object == "customer personal data and backups"
+    assert assigned[0].includes == ["backups"]

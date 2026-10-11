@@ -11,7 +11,7 @@
           "audit events",
           "exports",
           "attachments",
-          "backups controlled by Tasklane"
+          "backups"
         ],
         "trigger": "termination of the Services",
         "deadline_days": 30,
@@ -55,7 +55,7 @@
           "params": {
             "table": "attachments",
             "deadline_days": 30,
-            "now": "2026-10-11T02:39:22.007091+00:00"
+            "now": "2026-10-11T02:57:38.933022+00:00"
           },
           "depends_on": [
             "attachments",
@@ -70,7 +70,7 @@
           "params": {
             "table": "audit_events",
             "deadline_days": 30,
-            "now": "2026-10-11T02:39:22.007091+00:00"
+            "now": "2026-10-11T02:57:38.933022+00:00"
           },
           "depends_on": [
             "audit_events",
@@ -85,7 +85,7 @@
           "params": {
             "table": "comments",
             "deadline_days": 30,
-            "now": "2026-10-11T02:39:22.007091+00:00"
+            "now": "2026-10-11T02:57:38.933022+00:00"
           },
           "depends_on": [
             "comments",
@@ -100,7 +100,7 @@
           "params": {
             "table": "invites",
             "deadline_days": 30,
-            "now": "2026-10-11T02:39:22.007091+00:00"
+            "now": "2026-10-11T02:57:38.933022+00:00"
           },
           "depends_on": [
             "invites",
@@ -115,7 +115,7 @@
           "params": {
             "table": "tasks",
             "deadline_days": 30,
-            "now": "2026-10-11T02:39:22.007091+00:00"
+            "now": "2026-10-11T02:57:38.933022+00:00"
           },
           "depends_on": [
             "tasks",
@@ -130,11 +130,24 @@
           "params": {
             "table": "users",
             "deadline_days": 30,
-            "now": "2026-10-11T02:39:22.007091+00:00"
+            "now": "2026-10-11T02:57:38.933022+00:00"
           },
           "depends_on": [
             "users",
             "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-config-backups",
+          "kind": "config",
+          "template": "terraform.maximum_retention",
+          "params": {
+            "path": "infra/storage.tf",
+            "maximum_days": 30
+          },
+          "depends_on": [
+            "infra/storage.tf"
           ],
           "fallback": null
         }
@@ -209,6 +222,16 @@
             "trace_id": null
           },
           "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-config-backups",
+            "outcome": "fail",
+            "evidence_sha256": "78a29a286e963222ea96e499c9b6b68c7cf3a59374ccbff39e53087c72cd6381",
+            "detail": "configured retention is 90 days; contract maximum is 30",
+            "trace_id": null
+          },
+          "fallback": null
         }
       ],
       "verdict": "violated"
@@ -218,7 +241,7 @@
         "id": "P-017",
         "kind": "retention_limit",
         "actor": "Tasklane",
-        "object": "Database snapshots and other retained backups",
+        "object": "database snapshots and retained backups",
         "includes": [],
         "trigger": null,
         "deadline_days": 30,
@@ -281,7 +304,7 @@
         "id": "P-021",
         "kind": "data_residency",
         "actor": "Tasklane",
-        "object": "Northwind's customer personal data belonging to European users",
+        "object": "customer personal data belonging to Northwind's European users",
         "includes": [],
         "trigger": null,
         "deadline_days": null,
@@ -327,7 +350,7 @@
         "id": "P-031",
         "kind": "notice_period",
         "actor": "Tasklane",
-        "object": "adding a new subprocessor",
+        "object": "addition of a new subprocessor",
         "includes": [],
         "trigger": "before adding a new subprocessor",
         "deadline_days": 30,
@@ -395,14 +418,14 @@
         "id": "P-041",
         "kind": "availability_slo",
         "actor": "Tasklane",
-        "object": "service",
+        "object": "monthly service availability and credits",
         "includes": [],
         "trigger": null,
         "deadline_days": null,
         "source": {
           "document": "Acme_MSA_2026.pdf",
           "clause": "6.2",
-          "text": "Tasklane will maintain 99.9% monthly service availability."
+          "text": "Tasklane will maintain 99.9% monthly service availability. If availability falls below 99.9%, eligible customers may request service credits under the published service-level schedule."
         }
       },
       "probes": [

@@ -75,6 +75,45 @@ def test_extract_promises_rejects_non_json_model_output():
         extract_promises(LoadedDocument(name="contract.md", text="terms"), InvalidBackend())
 
 
+def test_extract_promises_repairs_one_invalid_model_response():
+    responses = iter(
+        [
+            "not json",
+            json.dumps(
+                {
+                    "promises": [
+                        {
+                            "kind": "availability_slo",
+                            "actor": "Tasklane",
+                            "object": "monthly service availability and credits",
+                            "includes": ["service credits"],
+                            "trigger": None,
+                            "deadline_days": None,
+                            "clause": "6.2",
+                            "text": "maintain 99.9% monthly service availability",
+                        }
+                    ]
+                }
+            ),
+        ]
+    )
+
+    class RepairBackend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete_json(self, system: str, user: str) -> str:
+            self.calls += 1
+            return next(responses)
+
+    backend = RepairBackend()
+
+    promises = extract_promises(LoadedDocument(name="msa.pdf", text="terms"), backend)
+
+    assert promises[0].object == "monthly service availability and credits"
+    assert backend.calls == 2
+
+
 @pytest.mark.parametrize(
     ("kind", "object_name"),
     [

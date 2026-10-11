@@ -1,0 +1,148 @@
+[
+  {
+    "id": "P-001",
+    "kind": "deletion_deadline",
+    "actor": "Tasklane",
+    "object": "Northwind's customer personal data",
+    "includes": [
+      "application records",
+      "audit events",
+      "exports",
+      "attachments",
+      "backups controlled by Tasklane"
+    ],
+    "trigger": "termination of the Services",
+    "deadline_days": 30,
+    "source": {
+      "document": "Northwind_DPA_v3.pdf",
+      "clause": "7.2",
+      "text": "Following termination of the Services, Tasklane will delete Northwind's customer personal data within 30 days. Deletion includes application records, audit events, exports, attachments, and backups controlled by Tasklane."
+    }
+  },
+  {
+    "id": "P-002",
+    "kind": "retention_limit",
+    "actor": "Tasklane",
+    "object": "database snapshots and other retained backups",
+    "includes": [],
+    "trigger": "termination of the Services",
+    "deadline_days": 30,
+    "source": {
+      "document": "Northwind_DPA_v3.pdf",
+      "clause": "7.2",
+      "text": "Database snapshots and other retained backups must not remain available beyond the same 30-day period."
+    }
+  },
+  {
+    "id": "P-003",
+    "kind": "data_residency",
+    "actor": "Tasklane",
+    "object": "customer personal data belonging to Northwind's European users",
+    "includes": [],
+    "trigger": null,
+    "deadline_days": null,
+    "source": {
+      "document": "Northwind_DPA_v3.pdf",
+      "clause": "9.1",
+      "text": "Customer personal data belonging to Northwind's European users will be stored and processed only in eu-west-1."
+    }
+  },
+  {
+    "id": "P-004",
+    "kind": "notice_period",
+    "actor": "Tasklane",
+    "object": "addition of a new subprocessor",
+    "includes": [],
+    "trigger": "before adding a new subprocessor",
+    "deadline_days": 30,
+    "source": {
+      "document": "Northwind_DPA_v3.pdf",
+      "clause": "11.3",
+      "text": "Tasklane will notify Northwind at least 30 days before adding a new subprocessor and will maintain a current subprocessor list available to Northwind."
+    }
+  },
+  {
+    "id": "P-005",
+    "kind": "feature_entitlement",
+    "actor": "Tasklane",
+    "object": "SSO configuration",
+    "includes": [],
+    "trigger": null,
+    "deadline_days": null,
+    "source": {
+      "document": "Acme_MSA_2026.pdf",
+      "clause": "4.1",
+      "text": "Tasklane will make SSO configuration available to administrators of every Business plan workspace."
+    }
+  },
+  {
+    "id": "P-006",
+    "kind": "availability_slo",
+    "actor": "Tasklane",
+    "object": "monthly service availability and credits",
+    "includes": [],
+    "trigger": null,
+    "deadline_days": null,
+    "source": {
+      "document": "Acme_MSA_2026.pdf",
+      "clause": "6.2",
+      "text": "Tasklane will maintain 99.9% monthly service availability. If availability falls below 99.9%, eligible customers may request service credits under the published service-level schedule."
+    }
+  },
+  {
+    "id": "P-007",
+    "kind": "encryption_at_rest",
+    "actor": "Tasklane",
+    "object": "customer data",
+    "includes": [],
+    "trigger": null,
+    "deadline_days": null,
+    "source": {
+      "document": "Acme_MSA_2026.pdf",
+      "clause": "8.1",
+      "text": "Tasklane will encrypt customer data at rest and require multi-factor authentication for administrative accounts."
+    }
+  },
+  {
+    "id": "P-008",
+    "kind": "admin_mfa",
+    "actor": "Tasklane",
+    "object": "administrative accounts",
+    "includes": [],
+    "trigger": null,
+    "deadline_days": null,
+    "source": {
+      "document": "Acme_MSA_2026.pdf",
+      "clause": "8.1",
+      "text": "Tasklane will encrypt customer data at rest and require multi-factor authentication for administrative accounts."
+    }
+  },
+  {
+    "id": "P-009",
+    "kind": "retention_limit",
+    "actor": "Tasklane",
+    "object": "customer personal data",
+    "includes": [],
+    "trigger": null,
+    "deadline_days": 90,
+    "source": {
+      "document": "privacy_policy.md",
+      "clause": "5",
+      "text": "Tasklane may retain customer personal data and backups for up to 90 days before permanent deletion."
+    }
+  },
+  {
+    "id": "P-010",
+    "kind": "retention_limit",
+    "actor": "Tasklane",
+    "object": "backups",
+    "includes": [],
+    "trigger": null,
+    "deadline_days": 90,
+    "source": {
+      "document": "privacy_policy.md",
+      "clause": "5",
+      "text": "Tasklane may retain customer personal data and backups for up to 90 days before permanent deletion."
+    }
+  }
+]
