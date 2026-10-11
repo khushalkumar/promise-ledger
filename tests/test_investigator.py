@@ -103,6 +103,44 @@ def test_evidence_investigator_collects_entire_impact_and_git_history(tmp_path):
     assert commands[2][:3] == ["git", "log", "-L"]
 
 
+def test_evidence_investigator_retries_entire_with_fast_profile(tmp_path):
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        if command[:3] == ["entire", "graph", "search"] and "full" in command:
+            raise subprocess.CalledProcessError(1, command, stderr="full profile unavailable")
+        if command[:3] == ["entire", "graph", "search"]:
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout=json.dumps(
+                    {
+                        "results": [
+                            {
+                                "symbol_name": "purge_expired_tenants",
+                                "file_path": "tasklane/jobs/purge_tenant.py",
+                                "start_line": 15,
+                                "end_line": 36,
+                            }
+                        ]
+                    }
+                ),
+                stderr="",
+            )
+        if command[:3] == ["entire", "graph", "impact"]:
+            return subprocess.CompletedProcess(command, 0, stdout="{}", stderr="")
+        return subprocess.CompletedProcess(command, 0, stdout="commit abc123\n", stderr="")
+
+    investigator = EvidenceInvestigator(tmp_path, StubBackend(), runner=runner)
+
+    causes = investigator.investigate(_violated_report())
+
+    assert causes
+    assert commands[0][commands[0].index("--profile") + 1] == "full"
+    assert commands[1][commands[1].index("--profile") + 1] == "fast"
+
+
 def test_investigator_canonicalizes_paths_and_merges_duplicate_file_causes(tmp_path):
     class DuplicateBackend:
         def complete_json(self, system: str, user: str) -> str:

@@ -102,6 +102,15 @@ class EvidenceInvestigator:
         )
 
     def _run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+        try:
+            return self._run_once(command)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            if command[:2] != ["entire", "graph"] or "full" not in command:
+                raise
+            retry = ["fast" if part == "full" else part for part in command]
+            return self._run_once(retry)
+
+    def _run_once(self, command: list[str]) -> subprocess.CompletedProcess[str]:
         return self.runner(
             command,
             cwd=self.target_root,
