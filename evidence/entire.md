@@ -12,7 +12,7 @@ entire graph search --repo <target> --profile full --format json --top-k 10 --qu
 
 The wrapper has a ten-second timeout and fails closed to an empty hit list when the CLI is missing, times out, returns invalid JSON, or rejects the request. The normal filesystem, database, and Terraform inventory remains available as a fallback.
 
-The traced runtime result is saved in `evidence/run_entire_graph.json` under Neatlogs trace `718d11e2564bc27720758321d2ec74e6`. Its embedded inventory contains ranked Entire Graph evidence, including:
+The traced runtime result is saved in `evidence/run_entire_graph.json` under Neatlogs trace `83d0432252b21bf3a37b25f8f2d1540b`. Its embedded inventory contains ranked Entire Graph evidence, including:
 
 | Rank | Source | Symbol | Lines |
 | ---: | --- | --- | ---: |

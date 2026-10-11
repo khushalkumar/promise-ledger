@@ -51,7 +51,7 @@
           "params": {
             "table": "attachments",
             "deadline_days": 30,
-            "now": "2026-10-11T03:57:08.533825+00:00"
+            "now": "2026-10-11T07:24:08.625694+00:00"
           },
           "depends_on": [
             "attachments",
@@ -66,7 +66,7 @@
           "params": {
             "table": "audit_events",
             "deadline_days": 30,
-            "now": "2026-10-11T03:57:08.533825+00:00"
+            "now": "2026-10-11T07:24:08.625694+00:00"
           },
           "depends_on": [
             "audit_events",
@@ -81,7 +81,7 @@
           "params": {
             "table": "comments",
             "deadline_days": 30,
-            "now": "2026-10-11T03:57:08.533825+00:00"
+            "now": "2026-10-11T07:24:08.625694+00:00"
           },
           "depends_on": [
             "comments",
@@ -96,7 +96,7 @@
           "params": {
             "table": "invites",
             "deadline_days": 30,
-            "now": "2026-10-11T03:57:08.533825+00:00"
+            "now": "2026-10-11T07:24:08.625694+00:00"
           },
           "depends_on": [
             "invites",
@@ -111,7 +111,7 @@
           "params": {
             "table": "tasks",
             "deadline_days": 30,
-            "now": "2026-10-11T03:57:08.533825+00:00"
+            "now": "2026-10-11T07:24:08.625694+00:00"
           },
           "depends_on": [
             "tasks",
@@ -126,7 +126,7 @@
           "params": {
             "table": "users",
             "deadline_days": 30,
-            "now": "2026-10-11T03:57:08.533825+00:00"
+            "now": "2026-10-11T07:24:08.625694+00:00"
           },
           "depends_on": [
             "users",
@@ -155,7 +155,7 @@
             "outcome": "fail",
             "evidence_sha256": "df647d2008b0fcc6699a7a1d1fd7e6e7b179ecfdd4fca553d88f99b14a3a3864",
             "detail": "purge omits tenant table(s): audit_events",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         },
@@ -165,7 +165,7 @@
             "outcome": "fail",
             "evidence_sha256": "c4abb033df9f1d694612f44082a71bd8e14bbcb7eb3fdc93d60bd02023f9e07b",
             "detail": "attachments has 2 row(s) past the 30-day deadline",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         },
@@ -175,7 +175,7 @@
             "outcome": "fail",
             "evidence_sha256": "742c8f8caa50a5f05d3ef8e3380c3544f77dda1769c216a38be0d6b5d3c53e78",
             "detail": "audit_events has 1284 row(s) past the 30-day deadline",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         },
@@ -185,7 +185,7 @@
             "outcome": "fail",
             "evidence_sha256": "f85896bb9c5b787931d38a84cd33bdb93c257d80183b6d61a6d176d6f978c116",
             "detail": "comments has 2 row(s) past the 30-day deadline",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         },
@@ -195,7 +195,7 @@
             "outcome": "fail",
             "evidence_sha256": "a69d762b4e2a98cafd6b905732c61c496301dfcd11871064ab773fc87d16fc94",
             "detail": "invites has 2 row(s) past the 30-day deadline",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         },
@@ -205,7 +205,7 @@
             "outcome": "fail",
             "evidence_sha256": "2d582e00e18a6e6565e4fb822e8d9ec7a21635b6e0a85219cb77ff26ff48811e",
             "detail": "tasks has 2 row(s) past the 30-day deadline",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         },
@@ -215,7 +215,7 @@
             "outcome": "fail",
             "evidence_sha256": "350ae7ec6d4a9ca8f1e8568fea1a13631f7d02bbc7bd3ba6ea4f67ff863113c0",
             "detail": "users has 2 row(s) past the 30-day deadline",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         },
@@ -225,7 +225,7 @@
             "outcome": "fail",
             "evidence_sha256": "78a29a286e963222ea96e499c9b6b68c7cf3a59374ccbff39e53087c72cd6381",
             "detail": "configured retention is 90 days; contract maximum is 30",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         }
@@ -282,14 +282,14 @@
             "outcome": "error",
             "evidence_sha256": "fbfd69d11eb6b5d9822e98793c78c30b9285ea626366b9f22bd917ee1dcafbbd",
             "detail": "PermissionError: AccessDenied",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": {
             "probe_id": "P-017-terraform-fallback",
             "outcome": "pass",
             "evidence_sha256": "3d89b5493f4589acf4a2f1f3e0e9249a9ae7d5b379cb935067bf67170d785032",
             "detail": "configured retention is 30 days; contract maximum is 30",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           }
         }
       ],
@@ -334,7 +334,7 @@
             "outcome": "fail",
             "evidence_sha256": "2bfcfb72e29a042c7cea1bfbb971bbabdfdc4ed5ec3604048b4167ce0884e949",
             "detail": "Terraform provider region(s) outside contract: us-east-1",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         }
@@ -402,7 +402,7 @@
             "outcome": "pass",
             "evidence_sha256": "c1d1d6120e441c724dfba4d239310047e890c4290108880391290093e0ac09e4",
             "detail": "plans.business.sso is true; expected true",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         }
@@ -469,7 +469,7 @@
             "outcome": "pass",
             "evidence_sha256": "ad46c2181baf937eadce01b84faca122ae66188454c5e3e8f42870e69fdac7dd",
             "detail": "availability.monthly_target_percent is 99.9; minimum is 99.9",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         },
@@ -479,7 +479,7 @@
             "outcome": "pass",
             "evidence_sha256": "87c1b6283436cb3fffdae0abff8c94db7f2553cef35f43de9d2c7edb617e165b",
             "detail": "availability.service_credits is true; expected true",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         }
@@ -524,7 +524,7 @@
             "outcome": "pass",
             "evidence_sha256": "6dbf533f9b541dc314544c64729d83ce73a6089100ffc9303033b05868b2cbc8",
             "detail": "storage_encrypted is true; expected true",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         }
@@ -572,7 +572,7 @@
             "outcome": "pass",
             "evidence_sha256": "42c166a73090414405cdb6760783adea4c02da702bba88dfe89e8626f331a5f8",
             "detail": "security.admin_mfa_required is true; expected true",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         }
@@ -618,7 +618,7 @@
             "outcome": "pass",
             "evidence_sha256": "6d899f3a3a96371fdac6a48de58985e4225a49d2116986dc4a88607730da3952",
             "detail": "configured retention is 90 days; contract maximum is 90",
-            "trace_id": "718d11e2564bc27720758321d2ec74e6"
+            "trace_id": "83d0432252b21bf3a37b25f8f2d1540b"
           },
           "fallback": null
         }

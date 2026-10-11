@@ -6,10 +6,10 @@ Promise Ledger uses Neatlogs in the running product, not only during development
 
 | Workflow | Trace ID | Saved evidence |
 | --- | --- | --- |
-| Three-document live audit | `53200c3288d182341125ec2408af6135` | `evidence/run_live_audit.json` |
+| Three-document live audit | `7e2c834ae151d4de37f08bf4af854495` | `evidence/run_live_audit.json` |
 | Compiler v1 vs. v2 benchmark | `2940581bcb8fa85fec385f6f9a823f0b` | `evidence/benchmark.json` |
 
-Every one of the 17 primary or fallback probe results in the live audit stores the same audit trace ID. The benchmark result stores its own trace ID at the top level. These identifiers are captured from the active Neatlogs/OpenTelemetry context while the decorated workflows are running.
+Every one of the 16 primary or fallback probe results in the live audit stores the same audit trace ID. The benchmark result stores its own trace ID at the top level. These identifiers are captured from the active Neatlogs/OpenTelemetry context while the workflows are running.
 
 ## Runtime coverage
 
@@ -38,4 +38,4 @@ The v1 failures are inspectable: it ignores the passing fallback for P-017 and t
 
 ## Verification boundary
 
-Local capture, 32-character trace IDs, deterministic result linkage, SDK flush, and shutdown are verified. A signed-in Neatlogs dashboard screenshot or public trace URL is still required before submission; this repository does not claim dashboard read-back until that artifact is added.
+Local capture, 32-character trace IDs, deterministic result linkage, SDK flush, and shutdown are verified. Signed-in dashboard read-back was also verified on October 11, 2026: the live-audit trace finalized with 36 spans and inspectable input/output, while the benchmark trace finalized with its saved comparison output. A dashboard capture should be included in the demo video; no public sharing link has been created.

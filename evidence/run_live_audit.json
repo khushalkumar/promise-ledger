@@ -17,8 +17,8 @@
         "deadline_days": 30,
         "source": {
           "document": "Northwind_DPA_v3.pdf",
-          "clause": "7.2",
-          "text": "Following termination of the Services, Tasklane will delete Northwind's customer personal data within 30 days. Deletion includes application records, audit events, exports, attachments, and backups controlled by Tasklane."
+          "clause": "7.2 Deletion and backup retention",
+          "text": "Tasklane will delete Northwind's customer personal data within 30 days. Deletion includes application records, audit events, exports, attachments, and backups controlled by Tasklane."
         }
       },
       "probes": [
@@ -55,7 +55,7 @@
           "params": {
             "table": "attachments",
             "deadline_days": 30,
-            "now": "2026-10-11T03:49:42.773422+00:00"
+            "now": "2026-10-11T07:22:03.975543+00:00"
           },
           "depends_on": [
             "attachments",
@@ -70,7 +70,7 @@
           "params": {
             "table": "audit_events",
             "deadline_days": 30,
-            "now": "2026-10-11T03:49:42.773422+00:00"
+            "now": "2026-10-11T07:22:03.975543+00:00"
           },
           "depends_on": [
             "audit_events",
@@ -85,7 +85,7 @@
           "params": {
             "table": "comments",
             "deadline_days": 30,
-            "now": "2026-10-11T03:49:42.773422+00:00"
+            "now": "2026-10-11T07:22:03.975543+00:00"
           },
           "depends_on": [
             "comments",
@@ -100,7 +100,7 @@
           "params": {
             "table": "invites",
             "deadline_days": 30,
-            "now": "2026-10-11T03:49:42.773422+00:00"
+            "now": "2026-10-11T07:22:03.975543+00:00"
           },
           "depends_on": [
             "invites",
@@ -115,7 +115,7 @@
           "params": {
             "table": "tasks",
             "deadline_days": 30,
-            "now": "2026-10-11T03:49:42.773422+00:00"
+            "now": "2026-10-11T07:22:03.975543+00:00"
           },
           "depends_on": [
             "tasks",
@@ -130,7 +130,7 @@
           "params": {
             "table": "users",
             "deadline_days": 30,
-            "now": "2026-10-11T03:49:42.773422+00:00"
+            "now": "2026-10-11T07:22:03.975543+00:00"
           },
           "depends_on": [
             "users",
@@ -146,7 +146,7 @@
             "outcome": "fail",
             "evidence_sha256": "df647d2008b0fcc6699a7a1d1fd7e6e7b179ecfdd4fca553d88f99b14a3a3864",
             "detail": "purge omits tenant table(s): audit_events",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         },
@@ -156,7 +156,7 @@
             "outcome": "fail",
             "evidence_sha256": "c4abb033df9f1d694612f44082a71bd8e14bbcb7eb3fdc93d60bd02023f9e07b",
             "detail": "attachments has 2 row(s) past the 30-day deadline",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         },
@@ -166,7 +166,7 @@
             "outcome": "fail",
             "evidence_sha256": "742c8f8caa50a5f05d3ef8e3380c3544f77dda1769c216a38be0d6b5d3c53e78",
             "detail": "audit_events has 1284 row(s) past the 30-day deadline",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         },
@@ -176,7 +176,7 @@
             "outcome": "fail",
             "evidence_sha256": "f85896bb9c5b787931d38a84cd33bdb93c257d80183b6d61a6d176d6f978c116",
             "detail": "comments has 2 row(s) past the 30-day deadline",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         },
@@ -186,7 +186,7 @@
             "outcome": "fail",
             "evidence_sha256": "a69d762b4e2a98cafd6b905732c61c496301dfcd11871064ab773fc87d16fc94",
             "detail": "invites has 2 row(s) past the 30-day deadline",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         },
@@ -196,7 +196,7 @@
             "outcome": "fail",
             "evidence_sha256": "2d582e00e18a6e6565e4fb822e8d9ec7a21635b6e0a85219cb77ff26ff48811e",
             "detail": "tasks has 2 row(s) past the 30-day deadline",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         },
@@ -206,7 +206,7 @@
             "outcome": "fail",
             "evidence_sha256": "350ae7ec6d4a9ca8f1e8568fea1a13631f7d02bbc7bd3ba6ea4f67ff863113c0",
             "detail": "users has 2 row(s) past the 30-day deadline",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         }
@@ -224,7 +224,7 @@
         "deadline_days": 30,
         "source": {
           "document": "Northwind_DPA_v3.pdf",
-          "clause": "7.2",
+          "clause": "7.2 Deletion and backup retention",
           "text": "Database snapshots and other retained backups must not remain available beyond the same 30-day period."
         }
       },
@@ -263,14 +263,14 @@
             "outcome": "error",
             "evidence_sha256": "fbfd69d11eb6b5d9822e98793c78c30b9285ea626366b9f22bd917ee1dcafbbd",
             "detail": "PermissionError: AccessDenied",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": {
             "probe_id": "P-017-terraform-fallback",
             "outcome": "pass",
             "evidence_sha256": "3d89b5493f4589acf4a2f1f3e0e9249a9ae7d5b379cb935067bf67170d785032",
             "detail": "configured retention is 30 days; contract maximum is 30",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           }
         }
       ],
@@ -287,7 +287,7 @@
         "deadline_days": null,
         "source": {
           "document": "Northwind_DPA_v3.pdf",
-          "clause": "9.1",
+          "clause": "9.1 Data residency",
           "text": "Customer personal data belonging to Northwind's European users will be stored and processed only in eu-west-1."
         }
       },
@@ -315,7 +315,7 @@
             "outcome": "fail",
             "evidence_sha256": "2bfcfb72e29a042c7cea1bfbb971bbabdfdc4ed5ec3604048b4167ce0884e949",
             "detail": "Terraform provider region(s) outside contract: us-east-1",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         }
@@ -327,13 +327,13 @@
         "id": "P-031",
         "kind": "notice_period",
         "actor": "Tasklane",
-        "object": "adding a new subprocessor",
+        "object": "addition of a new subprocessor",
         "includes": [],
         "trigger": null,
         "deadline_days": 30,
         "source": {
           "document": "Northwind_DPA_v3.pdf",
-          "clause": "11.3",
+          "clause": "11.3 Subprocessor notice",
           "text": "Tasklane will notify Northwind at least 30 days before adding a new subprocessor and will maintain a current subprocessor list available to Northwind."
         }
       },
@@ -383,7 +383,7 @@
             "outcome": "pass",
             "evidence_sha256": "c1d1d6120e441c724dfba4d239310047e890c4290108880391290093e0ac09e4",
             "detail": "plans.business.sso is true; expected true",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         }
@@ -402,7 +402,7 @@
         "source": {
           "document": "Acme_MSA_2026.pdf",
           "clause": "6.2",
-          "text": "Tasklane will maintain 99.9% monthly service availability. If availability falls below 99.9%, eligible customers may request service credits under the published service-level schedule."
+          "text": "Tasklane will maintain 99.9% monthly service availability."
         }
       },
       "probes": [
@@ -448,7 +448,7 @@
             "outcome": "pass",
             "evidence_sha256": "ad46c2181baf937eadce01b84faca122ae66188454c5e3e8f42870e69fdac7dd",
             "detail": "availability.monthly_target_percent is 99.9; minimum is 99.9",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         },
@@ -458,7 +458,7 @@
             "outcome": "pass",
             "evidence_sha256": "87c1b6283436cb3fffdae0abff8c94db7f2553cef35f43de9d2c7edb617e165b",
             "detail": "availability.service_credits is true; expected true",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         }
@@ -477,7 +477,7 @@
         "source": {
           "document": "Acme_MSA_2026.pdf",
           "clause": "8.1",
-          "text": "Tasklane will encrypt customer data at rest..."
+          "text": "Tasklane will encrypt customer data at rest"
         }
       },
       "probes": [
@@ -503,7 +503,7 @@
             "outcome": "pass",
             "evidence_sha256": "6dbf533f9b541dc314544c64729d83ce73a6089100ffc9303033b05868b2cbc8",
             "detail": "storage_encrypted is true; expected true",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         }
@@ -522,7 +522,7 @@
         "source": {
           "document": "Acme_MSA_2026.pdf",
           "clause": "8.1",
-          "text": "...and require multi-factor authentication for administrative accounts."
+          "text": "Tasklane will ... require multi-factor authentication for administrative accounts."
         }
       },
       "probes": [
@@ -551,7 +551,7 @@
             "outcome": "pass",
             "evidence_sha256": "42c166a73090414405cdb6760783adea4c02da702bba88dfe89e8626f331a5f8",
             "detail": "security.admin_mfa_required is true; expected true",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         }
@@ -595,7 +595,7 @@
             "outcome": "pass",
             "evidence_sha256": "6d899f3a3a96371fdac6a48de58985e4225a49d2116986dc4a88607730da3952",
             "detail": "configured retention is 90 days; contract maximum is 90",
-            "trace_id": "53200c3288d182341125ec2408af6135"
+            "trace_id": "7e2c834ae151d4de37f08bf4af854495"
           },
           "fallback": null
         }
@@ -619,7 +619,121 @@
     "promises": 9,
     "llm_calls": 3,
     "prompt_tokens": 2886,
-    "completion_tokens": 929,
-    "total_tokens": 3815
+    "completion_tokens": 920,
+    "total_tokens": 3806
+  },
+  "inventory": {
+    "tenant_tables": [
+      "attachments",
+      "audit_events",
+      "comments",
+      "invites",
+      "tasks",
+      "users"
+    ],
+    "source_files": [
+      "tasklane/__init__.py",
+      "tasklane/db.py",
+      "tasklane/jobs/__init__.py",
+      "tasklane/jobs/purge_tenant.py",
+      "tasklane/seed.py"
+    ],
+    "terraform_files": [
+      "infra/database.tf",
+      "infra/storage.tf"
+    ],
+    "config_files": [
+      "config/compliance.json"
+    ],
+    "entire_graph_hits": [
+      {
+        "rank": 1,
+        "score": 25.7533,
+        "file_path": "tasklane/seed.py",
+        "start_line": 7,
+        "end_line": 12,
+        "symbol_name": "seed_database"
+      },
+      {
+        "rank": 2,
+        "score": 27.2757,
+        "file_path": "tests/test_fixture.py",
+        "start_line": 65,
+        "end_line": 68,
+        "symbol_name": "test_database_snapshots_have_a_compliant_30_day_retention_fallback"
+      },
+      {
+        "rank": 3,
+        "score": 25.7433,
+        "file_path": "tasklane/db.py",
+        "start_line": 12,
+        "end_line": 52,
+        "symbol_name": "initialize_database"
+      },
+      {
+        "rank": 4,
+        "score": 25.7433,
+        "file_path": "tasklane/db.py",
+        "start_line": 55,
+        "end_line": 109,
+        "symbol_name": "seed_demo_data"
+      },
+      {
+        "rank": 5,
+        "score": 21.8427,
+        "file_path": "infra/storage.tf",
+        "start_line": 23,
+        "end_line": 34,
+        "symbol_name": "backups"
+      },
+      {
+        "rank": 6,
+        "score": 23.178,
+        "file_path": "tasklane/seed.py",
+        "start_line": 17,
+        "end_line": 21,
+        "symbol_name": "main"
+      },
+      {
+        "rank": 7,
+        "score": 18.9601,
+        "file_path": "config/compliance.json",
+        "start_line": 4,
+        "end_line": 4,
+        "symbol_name": "sso"
+      },
+      {
+        "rank": 8,
+        "score": 23.169,
+        "file_path": "tasklane/seed.py",
+        "start_line": 2,
+        "end_line": 6,
+        "symbol_name": null
+      },
+      {
+        "rank": 9,
+        "score": 15.516,
+        "file_path": "tasklane/jobs/purge_tenant.py",
+        "start_line": 13,
+        "end_line": 40,
+        "symbol_name": "purge_expired_tenants"
+      },
+      {
+        "rank": 10,
+        "score": 0.0,
+        "file_path": "tasklane/db.py",
+        "start_line": 6,
+        "end_line": 9,
+        "symbol_name": null
+      },
+      {
+        "rank": 11,
+        "score": 0.0,
+        "file_path": "tests/test_fixture.py",
+        "start_line": 82,
+        "end_line": 88,
+        "symbol_name": null
+      }
+    ]
   }
 }
