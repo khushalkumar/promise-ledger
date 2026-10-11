@@ -2,7 +2,7 @@
 
 ## Run
 
-The live audit processed three fictional agreements with three model calls, canonicalized nine promises, executed 16 primary or fallback probe results, and detected one cross-document conflict.
+The live audit processed three fictional agreements with three model calls, canonicalized nine promises, executed 17 primary or fallback probe results, and detected one cross-document conflict.
 
 | Signal | Result |
 | --- | --- |
@@ -13,7 +13,7 @@ The live audit processed three fictional agreements with three model calls, cano
 | P-040 through P-044 | `holds` |
 | C-003 retention conflict | `violated` - DPA says 30 days while the policy allows 90 |
 
-The saved result is `evidence/run_live_audit.json`. All 16 probe results link to dashboard-verified Neatlogs trace `7e2c834ae151d4de37f08bf4af854495`.
+The saved result is `evidence/run_live_audit.json`. All 17 probe results link to dashboard-verified Neatlogs trace `279e6c54faac9ee0a38d05177481c551`.
 
 ## Remediation
 
@@ -27,7 +27,7 @@ The PR heads were combined in an isolated checkout. The Tasklane test suite pass
 ## Improvement and economics
 
 - The ten-case compiler benchmark moves from three v1 mismatches to zero v2 mismatches and is linked to Neatlogs trace `2940581bcb8fa85fec385f6f9a823f0b`.
-- The latest verified live run used 2,886 prompt and 920 completion tokens, or $0.016415 at the stated scenario prices. The cfo.ai model conservatively retains the earlier 929-completion-token measurement and $0.016505 cost assumption.
+- The latest verified live run used 2,886 prompt and 938 completion tokens, or $0.016595 at the stated scenario prices. The cfo.ai model retains its earlier 929-completion-token measurement and $0.016505 cost assumption.
 - The four-page business plan is in `docs/business_plan.pdf` and the cfo.ai entry rows are in `evidence/cfo_inputs.csv`.
 
 ## Remaining submission captures

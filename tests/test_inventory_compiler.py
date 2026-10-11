@@ -75,6 +75,22 @@ def test_compiler_grounds_deletion_promise_to_fixed_probe_templates():
     assert all("code" not in probe.params for probe in probes)
 
 
+def test_compiler_recognizes_extracted_backup_include_phrase():
+    promise = deletion_promise().model_copy(
+        update={"includes": ["backups controlled by Tasklane"]}
+    )
+    assets = AssetMap(
+        tenant_tables=["audit_events"],
+        source_files=["tasklane/jobs/purge_tenant.py"],
+        terraform_files=["infra/storage.tf"],
+    )
+
+    probes = compile_checks(promise, assets)
+
+    assert probes[-1].template == "terraform.maximum_retention"
+    assert probes[-1].params == {"path": "infra/storage.tf", "maximum_days": 30}
+
+
 def test_compiler_returns_no_probes_when_promise_cannot_be_grounded():
     assets = AssetMap(tenant_tables=[], source_files=[], terraform_files=[])
 

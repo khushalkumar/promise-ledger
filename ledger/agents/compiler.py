@@ -172,7 +172,11 @@ def compile_checks(promise: Promise, assets: AssetMap) -> list[Probe]:
     )
 
     storage_files = [path for path in assets.terraform_files if path.endswith("storage.tf")]
-    if "backups" in promise.includes and storage_files:
+    includes_backups = any(
+        re.search(r"\bbackups?\b", included, flags=re.IGNORECASE)
+        for included in promise.includes
+    )
+    if includes_backups and storage_files:
         probes.append(
             Probe(
                 id=f"{promise.id}-config-backups",

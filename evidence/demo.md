@@ -5,7 +5,7 @@
 1. Keep both repositories private until the submission switch.
 2. Seed `tasklane-demo/artifacts/tasklane.db` from Tasklane `main`.
 3. Run the live audit and leave the ledger UI open at the top of the page.
-4. Open Tasklane PR #1, Tasklane PR #2, `evidence/run_remediated.json`, Neatlogs trace `7e2c834ae151d4de37f08bf4af854495`, and benchmark trace `2940581bcb8fa85fec385f6f9a823f0b` in separate tabs.
+4. Open Tasklane PR #1, Tasklane PR #2, `evidence/run_remediated.json`, Neatlogs trace `279e6c54faac9ee0a38d05177481c551`, and benchmark trace `2940581bcb8fa85fec385f6f9a823f0b` in separate tabs.
 5. Confirm no secrets, private browser chrome, or unrelated tabs are visible.
 6. Keep both remediation PRs unmerged; the isolated combined re-check is the proof artifact.
 

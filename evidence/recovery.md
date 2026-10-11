@@ -20,4 +20,4 @@ detail: configured retention is 30 days; contract maximum is 30
 
 The deterministic verdict engine uses the effective fallback result and returns `holds`. If the fallback were absent, the result would be `at_risk`; if the fallback failed, the result would be `violated`.
 
-The complete primary and fallback records, including evidence hashes and trace ID `7e2c834ae151d4de37f08bf4af854495`, are stored in `evidence/run_live_audit.json`. Both executions are instrumented as Neatlogs probe spans.
+The complete primary and fallback records, including evidence hashes and trace ID `279e6c54faac9ee0a38d05177481c551`, are stored in `evidence/run_live_audit.json`. Both executions are instrumented as Neatlogs probe spans.
