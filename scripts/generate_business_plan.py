@@ -228,7 +228,7 @@ def build() -> None:
             ParagraphStyle("Deck", parent=styles["body"], fontSize=14, leading=20, textColor=MUTED, spaceAfter=12 * mm),
         ),
         Table(
-            [[Pill("Measured audit cost", "$0.016865"), Pill("Base gross margin", "75.83%"), Pill("Break-even", "~325 contracts")]],
+            [[Pill("Measured audit cost", "$0.016505"), Pill("Base gross margin", "75.84%"), Pill("Break-even", "~386 contracts")]],
             colWidths=[56 * mm] * 3,
             style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 3 * mm)]),
         ),
@@ -252,7 +252,7 @@ def build() -> None:
         Table(
             [
                 ["Documents", "Promises", "Model calls", "Prompt tokens", "Completion tokens"],
-                ["3", "9", "3", "2,886", "965"],
+                ["3", "9", "3", "2,886", "929"],
             ],
             colWidths=[32 * mm, 32 * mm, 32 * mm, 34 * mm, 34 * mm],
             style=TableStyle([
@@ -270,13 +270,13 @@ def build() -> None:
         ),
         Paragraph("Cost equation", styles["h2"]),
         Table(
-            [[Paragraph("(2,886 / 1M x $2.50) + (965 / 1M x $10.00) = <b>$0.016865 per audit</b>", styles["callout"]) ]],
+            [[Paragraph("(2,886 / 1M x $2.50) + (929 / 1M x $10.00) = <b>$0.016505 per audit</b>", styles["callout"]) ]],
             colWidths=[164 * mm],
             style=TableStyle([("BACKGROUND", (0, 0), (-1, -1), MINT), ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#B9DDD5")), ("TOPPADDING", (0, 0), (-1, -1), 8 * mm), ("BOTTOMPADDING", (0, 0), (-1, -1), 8 * mm)]),
         ),
         Paragraph("What actually drives margin", styles["h2"]),
         Paragraph(
-            "Model tokens are not the constraint. At the base volume, model API expense is only $26.98 per month. Infrastructure, review support, security work, and customer operations dominate COGS. The pricing experiment should therefore validate willingness to pay and support intensity, not optimize pennies of inference first.",
+            "Model tokens are not the constraint. At the base volume, model API expense is only $26.41 per month. Infrastructure, review support, security work, and customer operations dominate COGS. The pricing experiment should therefore validate willingness to pay and support intensity, not optimize pennies of inference first.",
             styles["body"],
         ),
         Paragraph("Pricing hypothesis", styles["h2"]),
@@ -323,12 +323,12 @@ def build() -> None:
         ),
         Paragraph("Base case", styles["h2"]),
         Paragraph(
-            f"At {int(base['monitored_contracts']):,} contracts, monthly revenue reaches {_money(float(base['monthly_revenue_usd']))} at a 75.83% gross margin. The company deliberately remains in investment mode with {_money(float(base['monthly_net_cash_flow_usd']))} monthly net cash flow and 8.22 months of runway on $50,000 opening cash.",
+            f"At {int(base['monitored_contracts']):,} contracts, monthly revenue reaches {_money(float(base['monthly_revenue_usd']))} at a {float(base['gross_margin_percent']):.2f}% gross margin. The company deliberately remains in investment mode with {_money(float(base['monthly_net_cash_flow_usd']))} monthly net cash flow and 8.22 months of runway on $50,000 opening cash.",
             styles["body"],
         ),
         Paragraph("Break-even", styles["h2"]),
         Paragraph(
-            "Base-case contribution is approximately $32.83 per monitored contract per month after variable model, observability, and per-contract support. With about $10,650 of fixed monthly COGS and operating expense, break-even is approximately 325 monitored contracts.",
+            "Base-case contribution is approximately $32.83 per monitored contract per month after variable model, observability, and per-contract support. With about $12,650 of fixed monthly infrastructure and operating expense, break-even is approximately 386 monitored contracts.",
             styles["body"],
         ),
         PageBreak(),
