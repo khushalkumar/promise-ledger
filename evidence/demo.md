@@ -5,8 +5,9 @@
 1. Keep both repositories private until the submission switch.
 2. Seed `tasklane-demo/artifacts/tasklane.db` from Tasklane `main`.
 3. Run the live audit and leave the ledger UI open at the top of the page.
-4. Open Tasklane PR #1, Tasklane PR #2, `evidence/run_remediated.json`, and the Neatlogs workflow in separate tabs.
+4. Open Tasklane PR #1, Tasklane PR #2, `evidence/run_remediated.json`, Neatlogs trace `7e2c834ae151d4de37f08bf4af854495`, and benchmark trace `2940581bcb8fa85fec385f6f9a823f0b` in separate tabs.
 5. Confirm no secrets, private browser chrome, or unrelated tabs are visible.
+6. Keep both remediation PRs unmerged; the isolated combined re-check is the proof artifact.
 
 ## 0:00-0:20 - The promise
 
@@ -58,6 +59,6 @@ Pause briefly on `P-021` and `P-031`.
 
 **Say:**
 
-> The live audit used 3,815 tokens across three calls, about 1.7 cents at the model-price assumption in the plan. Token cost is not the margin constraint; review support and infrastructure are. The base model prices monitored contracts at $39 per month and reaches roughly 76% gross margin. Promise Ledger makes contract truth testable, fixable, and economically practical.
+> The live audit used about 3.8 thousand tokens across three calls, about 1.7 cents at the conservative model-price assumption in the plan. Token cost is not the margin constraint; review support and infrastructure are. The base model prices monitored contracts at $39 per month and reaches roughly 76% gross margin. Promise Ledger makes contract truth testable, fixable, and economically practical.
 
 End on the ledger hero and the line: **Every promise gets a chain of proof.**
