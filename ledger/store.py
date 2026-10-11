@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import JSON, Column, delete
+from sqlalchemy.engine import make_url
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from ledger.models import WorkflowEvent, WorkflowRun, WorkflowStage
@@ -34,6 +36,9 @@ class ProbeDependencyRow(SQLModel, table=True):
 
 class RunStore:
     def __init__(self, database_url: str) -> None:
+        url = make_url(database_url)
+        if url.drivername.startswith("sqlite") and url.database not in (None, ":memory:"):
+            Path(url.database).expanduser().parent.mkdir(parents=True, exist_ok=True)
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self.engine = create_engine(database_url, connect_args=connect_args)
         SQLModel.metadata.create_all(self.engine)

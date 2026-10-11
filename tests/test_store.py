@@ -43,3 +43,12 @@ def test_run_store_records_probe_dependencies_for_selective_recheck(tmp_path):
         "P-014-static-purge",
         "P-021-terraform-regions",
     ]
+
+
+def test_run_store_creates_parent_directory_for_fresh_sqlite_database(tmp_path):
+    database = tmp_path / "fresh" / "nested" / "state.db"
+
+    store = RunStore(f"sqlite:///{database}")
+
+    assert database.exists()
+    store.create_run("run-fresh", target_repository="owner/repository")
