@@ -86,11 +86,24 @@ def create_app(
             raise HTTPException(status_code=409, detail=str(error)) from error
 
     @app.get("/api/agent-runs/status")
-    def agent_run_status(request: Request) -> dict[str, str]:
+    def agent_run_status(request: Request) -> dict[str, object]:
         _authorize_agent_request(request, trigger_token)
         if agent_controller is None:
             raise HTTPException(status_code=503, detail="Autonomous runs are not enabled")
-        return agent_controller.status()
+        payload: dict[str, object] = agent_controller.status()
+        run_id = payload.get("run_id")
+        if store is not None and isinstance(run_id, str) and run_id:
+            workflow_run = store.get_run(run_id)
+            if workflow_run is not None:
+                payload["stage"] = workflow_run.stage.value
+                payload["events"] = [
+                    {
+                        "stage": event.stage.value,
+                        "payload": event.payload,
+                    }
+                    for event in workflow_run.events
+                ]
+        return payload
 
     return app
 

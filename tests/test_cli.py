@@ -316,4 +316,5 @@ def test_render_trigger_script_keeps_token_out_of_command_line():
     assert "promise-ledger-render-trigger" in script
     assert 'Authorization: Bearer ${trigger_token}' in script
     assert "/api/agent-runs/status" in script
+    assert "Render stage:" in script
     assert "PROMISE_LEDGER_TRIGGER_TOKEN=" not in script

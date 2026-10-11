@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 import ledger.web
 from ledger.agent_service import AgentRunController
-from ledger.models import LedgerRun
+from ledger.models import LedgerRun, WorkflowStage
 from ledger.store import RunStore
 from ledger.web import create_app
 from tests.test_investigator import _violated_report
@@ -177,3 +177,34 @@ def test_agent_run_trigger_rejects_parallel_run(tmp_path):
     )
 
     assert response.status_code == 409
+
+
+def test_agent_run_status_includes_persisted_workflow_progress(tmp_path):
+    store = RunStore(f"sqlite:///{tmp_path / 'state.db'}")
+    store.create_run("pl-progress", target_repository="khushalkumar/tasklane-demo")
+    store.record_stage(
+        "pl-progress",
+        WorkflowStage.RECHECKING,
+        {"probe_ids": ["P-014-data-audit_events"]},
+    )
+    controller = AgentRunController(command=["ignored"])
+    controller._status = {"run_id": "pl-progress", "status": "running"}
+    client = TestClient(
+        create_app(
+            store=store,
+            agent_controller=controller,
+            trigger_token="top-secret",
+        )
+    )
+
+    response = client.get(
+        "/api/agent-runs/status",
+        headers={"Authorization": "Bearer top-secret"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["stage"] == "rechecking"
+    assert response.json()["events"][-1] == {
+        "stage": "rechecking",
+        "payload": {"probe_ids": ["P-014-data-audit_events"]},
+    }

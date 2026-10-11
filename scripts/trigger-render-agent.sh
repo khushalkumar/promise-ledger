@@ -34,7 +34,11 @@ EOF
     printf '%s' "${status_response}" \
       | sed -n 's/.*"status":"\([^"]*\)".*/\1/p'
   )"
-  echo "Render status: ${run_status:-unknown}"
+  run_stage="$(
+    printf '%s' "${status_response}" \
+      | sed -n 's/.*"stage":"\([^"]*\)".*/\1/p'
+  )"
+  echo "Render status: ${run_status:-unknown} | Render stage: ${run_stage:-pending}"
   case "${run_status}" in
     completed)
       exit 0

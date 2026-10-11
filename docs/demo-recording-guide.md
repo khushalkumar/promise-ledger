@@ -54,14 +54,14 @@ The live audit normally takes approximately 15–30 seconds. Do not type any cre
 | Prepared live-run Terminal | I will open this immediately before recording | One command waiting at the prompt. You press **Enter once**. No credential values will be visible. |
 | Baseline audit UI | <http://127.0.0.1:8000> | Promise Ledger page. `P-014` is red and says **VIOLATED**. This is also the fallback if the live run is delayed. |
 | Live result UI | <http://127.0.0.1:8002> | The result created while recording. I will prepare this address to display the new run after it finishes. |
-| Public hosted UI | <https://promise-ledger.onrender.com> | The deployed Render service. Before its first hosted completion it shows verified fallback evidence; afterward it shows the newest durable PostgreSQL result. |
+| Public hosted UI | <https://promise-ledger.onrender.com> | The deployed Render service showing the newest durable PostgreSQL result. The verified hosted run `pl-20261011T194248Z-7187f798` shows `P-014` as **HOLDS**. |
 | Hosted agent trigger | [`scripts/trigger-render-agent.sh`](../scripts/trigger-render-agent.sh) | Starts the protected Render autonomous workflow and polls it to completion without printing credentials. This is used for rehearsal and hosted verification, not inside the three-minute take. |
 | Neatlogs trace list | [Promise Ledger traces](https://app.neatlogs.com/traces?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | The newest Promise Ledger run should appear first after refreshing. |
-| Verified Neatlogs fallback | [Trace `279e...c551`](https://app.neatlogs.com/traces/279e6c54faac9ee0a38d05177481c551?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | A 37-span run showing workflow, agents, tools, guardrails, input, and output. Use this if the fresh trace has not appeared yet. |
-| Tasklane fix 1 | [Tasklane PR #3](https://github.com/khushalkumar/tasklane-demo/pull/3) | Runtime-created normal PR adding `audit_events` to the deletion job. Its checks pass. |
-| Tasklane fix 2 | [Tasklane PR #4](https://github.com/khushalkumar/tasklane-demo/pull/4) | Runtime-created normal PR changing backup expiry from 90 days to 30 days. Its checks pass. |
-| Fixed-result UI | <http://127.0.0.1:8001> | The isolated after-fix result. `P-014` is green and says **HOLDS**. |
-| Autonomous run | [`evidence/run_autonomous.json`](../evidence/run_autonomous.json) | Run `pl-20261011T130117Z-6f374997`: two grounded causes, PRs #3/#4, and combined selective re-check. |
+| Verified hosted Neatlogs trace | [Trace `a751...f144`](https://app.neatlogs.com/traces/a7519399784bf339b0b5081921f5f144?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | The successful hosted autonomous run, including extraction, investigation, PR reuse, full-history merge, and selective recheck. |
+| Tasklane fix 1 | [Tasklane Render PR #1](https://github.com/khushalkumar/tasklane-render-smoke/pull/1) | Runtime-created normal PR that fixes tenant deletion, adds the recurring 30-day purge, tests it, and keeps the verification contract synchronized. |
+| Tasklane fix 2 | [Tasklane Render PR #2](https://github.com/khushalkumar/tasklane-render-smoke/pull/2) | Runtime-created normal PR that caps controlled-backup retention at 30 days and adds Terraform validation evidence. |
+| Fixed-result UI | <https://promise-ledger.onrender.com> | The hosted after-fix result. `P-014` is green and says **HOLDS** with all eight checks passing. |
+| Autonomous run | <https://promise-ledger.onrender.com/api/runs/latest> | Durable result for run `pl-20261011T194248Z-7187f798`: two real PRs, full PR histories merged in isolation, and all P-014 evidence rechecked. |
 | Benchmark trace | [Trace `861b...bf5f`](https://app.neatlogs.com/traces/861bcfead02ad6de99ff5b7a0009bf5f?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | Free-form v1 misses 8/10; grounded v2 gets 10/10 with 68% lower estimated model cost. |
 | Benchmark backup | [`evidence/benchmark.md`](../evidence/benchmark.md) | The independent compiler comparison, including tokens, cost, latency, and repair-call data. |
 | Entire evidence | [`evidence/entire.md`](../evidence/entire.md) | Entire Graph finds `purge_expired_tenants` in `tasklane/jobs/purge_tenant.py`; the checkpoint ID is also recorded. |
@@ -99,9 +99,9 @@ I will prepare these tabs in order:
 4. Baseline audit UI (`8000`) as a fallback.
 5. Neatlogs trace list and verified trace.
 6. Entire evidence.
-7. Tasklane PR #3.
-8. Tasklane PR #4.
-9. Fixed-result UI (`8001`).
+7. Tasklane Render PR #1.
+8. Tasklane Render PR #2.
+9. Hosted fixed-result UI (`promise-ledger.onrender.com`).
 10. cfo.ai scenario model and backup image.
 11. Business-plan PDF.
 
@@ -110,7 +110,8 @@ I will also run one rehearsal before the final take. The rehearsal verifies exec
 Before that rehearsal, I will run `scripts/trigger-render-agent.sh` once outside the
 recording. That hosted verification is complete only when Render reports `completed`,
 GitHub contains the resulting normal PRs, Neatlogs contains the new trace, and the public
-UI returns the same run ID from `/api/runs/latest`.
+UI returns the same run ID from `/api/runs/latest`. The completed rehearsal evidence is
+run `pl-20261011T194248Z-7187f798`, PRs #1/#2, and trace `a751...f144`.
 
 Close unrelated tabs and hide bookmarks, notifications, email, Slack, and anything containing credentials. Keep both Tasklane pull requests unmerged.
 
@@ -168,7 +169,7 @@ If it takes longer than 30 seconds, stop waiting and switch to the baseline UI a
 
 ### Scene 4 — neatlogs and Entire runtime — 1:15 to 1:50
 
-**Open:** the Neatlogs trace list, refresh, and select the newest Promise Ledger run. If it has not appeared, use verified trace `279e...c551`.
+**Open:** the Neatlogs trace list, refresh, and select the newest Promise Ledger run. If it has not appeared, use verified trace `a751...f144`.
 
 **Show:** the `ledger_run` workflow and its nested agent, tool, and guardrail spans.
 
@@ -182,13 +183,13 @@ This explicitly covers neatlogs architecture, implementation, runtime, reasoning
 
 ### Scene 5 — Fix and verify — 1:50 to 2:25
 
-**Open in sequence:** Tasklane PR #3, PR #4, then fixed-result UI `8001`.
+**Open in sequence:** Tasklane Render PR #1, PR #2, then the hosted fixed-result UI.
 
 **Action:**
 
-1. On PR #3, show the title, green checks, runtime run ID, and `audit_events` added to deletion.
-2. On PR #4, show the title, green checks, runtime run ID, and backup expiry changing from 90 to 30.
-3. On `8001`, show green `P-014` and its passing checks.
+1. On PR #1, show the title, runtime run ID, `audit_events` deletion, recurring 30-day purge, and tests.
+2. On PR #2, show the title, runtime run ID, and the backup-retention maximum changing from 90 to 30.
+3. On `promise-ledger.onrender.com`, show green `P-014` and all eight passing checks.
 4. Briefly show that `P-021` remains red and `P-031` remains unverifiable.
 
 **Say:**
@@ -213,7 +214,7 @@ Wait one second, then stop recording from the macOS menu-bar stop button.
 
 - **Live audit exceeds 30 seconds:** switch to `8000` and continue. Do not restart it on camera.
 - **Live result page `8002` is unavailable:** use baseline `8000`.
-- **Fresh Neatlogs trace is delayed:** use verified trace `279e...c551`.
+- **Fresh Neatlogs trace is delayed:** use verified hosted trace `a751...f144`.
 - **Neatlogs itself is slow:** show the local `P-017` recovery result and `evidence/benchmark.md`.
 - **cfo.ai is slow or logged out:** use `evidence/cfo_scenario_model.png`.
 - **GitHub asks for sign-in:** use the Chrome profile already signed into `khushalkumar`.
