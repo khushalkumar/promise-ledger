@@ -1,9 +1,12 @@
 import sqlite3
 
+import neatlogs
+
 from ledger.models import AssetMap
 from ledger.probes.executors import ProbeContext
 
 
+@neatlogs.span(kind="TOOL", name="system_inventory")
 def build_inventory(context: ProbeContext) -> AssetMap:
     with sqlite3.connect(context.database) as connection:
         table_names = [

@@ -1,5 +1,7 @@
 from collections.abc import Sequence
 
+import neatlogs
+
 from ledger.agents.compiler import compile_checks
 from ledger.inventory import build_inventory
 from ledger.models import LedgerRun, Promise, PromiseReport
@@ -8,6 +10,7 @@ from ledger.probes.runner import run_probe
 from ledger.verdict import evaluate_verdict
 
 
+@neatlogs.span(kind="WORKFLOW", name="ledger_run")
 def run_ledger(promises: Sequence[Promise], context: ProbeContext) -> LedgerRun:
     assets = build_inventory(context)
     reports = []

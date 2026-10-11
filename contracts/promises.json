@@ -1,0 +1,44 @@
+[
+  {
+    "id": "P-014",
+    "kind": "deletion_deadline",
+    "actor": "Tasklane",
+    "object": "customer personal data",
+    "includes": ["backups"],
+    "trigger": "contract.terminated",
+    "deadline_days": 30,
+    "source": {
+      "document": "Northwind_DPA_v3.pdf",
+      "clause": "7.2",
+      "text": "delete customer personal data, including backups, within 30 days"
+    }
+  },
+  {
+    "id": "P-017",
+    "kind": "retention_limit",
+    "actor": "Tasklane",
+    "object": "database snapshots",
+    "includes": [],
+    "trigger": "contract.terminated",
+    "deadline_days": 30,
+    "source": {
+      "document": "Northwind_DPA_v3.pdf",
+      "clause": "7.2",
+      "text": "database snapshots must not remain available beyond 30 days"
+    }
+  },
+  {
+    "id": "P-031",
+    "kind": "notice_period",
+    "actor": "Tasklane",
+    "object": "subprocessor list",
+    "includes": [],
+    "trigger": "subprocessor.added",
+    "deadline_days": 30,
+    "source": {
+      "document": "Northwind_DPA_v3.pdf",
+      "clause": "11.3",
+      "text": "notify customers 30 days before adding a subprocessor"
+    }
+  }
+]

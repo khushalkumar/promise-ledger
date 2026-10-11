@@ -1,11 +1,14 @@
 import hashlib
 from collections.abc import Callable
 
+import neatlogs
+
 from ledger.models import Probe, ProbeOutcome, ProbeResult, ProbeRun
 
 ProbeExecutor = Callable[[Probe], tuple[ProbeOutcome, str]]
 
 
+@neatlogs.span(kind="TOOL", name="probe_runner")
 def run_probe(probe: Probe, executor: ProbeExecutor) -> ProbeRun:
     primary = _execute(probe, executor)
     fallback = None

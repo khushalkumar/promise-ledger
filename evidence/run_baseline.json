@@ -1,0 +1,318 @@
+{
+  "reports": [
+    {
+      "promise": {
+        "id": "P-014",
+        "kind": "deletion_deadline",
+        "actor": "Tasklane",
+        "object": "customer personal data",
+        "includes": [
+          "backups"
+        ],
+        "trigger": "contract.terminated",
+        "deadline_days": 30,
+        "source": {
+          "document": "Northwind_DPA_v3.pdf",
+          "clause": "7.2",
+          "text": "delete customer personal data, including backups, within 30 days"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-014-static-purge",
+          "kind": "static",
+          "template": "static.purge_covers_tables",
+          "params": {
+            "path": "tasklane/jobs/purge_tenant.py",
+            "required_tables": [
+              "attachments",
+              "audit_events",
+              "comments",
+              "invites",
+              "tasks",
+              "users"
+            ]
+          },
+          "depends_on": [
+            "tasklane/jobs/purge_tenant.py",
+            "attachments",
+            "audit_events",
+            "comments",
+            "invites",
+            "tasks",
+            "users"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-attachments",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "attachments",
+            "deadline_days": 30,
+            "now": "2026-10-11T01:49:42.433108+00:00"
+          },
+          "depends_on": [
+            "attachments",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-audit_events",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "audit_events",
+            "deadline_days": 30,
+            "now": "2026-10-11T01:49:42.433108+00:00"
+          },
+          "depends_on": [
+            "audit_events",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-comments",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "comments",
+            "deadline_days": 30,
+            "now": "2026-10-11T01:49:42.433108+00:00"
+          },
+          "depends_on": [
+            "comments",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-invites",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "invites",
+            "deadline_days": 30,
+            "now": "2026-10-11T01:49:42.433108+00:00"
+          },
+          "depends_on": [
+            "invites",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-tasks",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "tasks",
+            "deadline_days": 30,
+            "now": "2026-10-11T01:49:42.433108+00:00"
+          },
+          "depends_on": [
+            "tasks",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-users",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "users",
+            "deadline_days": 30,
+            "now": "2026-10-11T01:49:42.433108+00:00"
+          },
+          "depends_on": [
+            "users",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-config-backups",
+          "kind": "config",
+          "template": "terraform.maximum_retention",
+          "params": {
+            "path": "infra/storage.tf",
+            "maximum_days": 30
+          },
+          "depends_on": [
+            "infra/storage.tf"
+          ],
+          "fallback": null
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-014-static-purge",
+            "outcome": "fail",
+            "evidence_sha256": "df647d2008b0fcc6699a7a1d1fd7e6e7b179ecfdd4fca553d88f99b14a3a3864",
+            "detail": "purge omits tenant table(s): audit_events",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-attachments",
+            "outcome": "fail",
+            "evidence_sha256": "c4abb033df9f1d694612f44082a71bd8e14bbcb7eb3fdc93d60bd02023f9e07b",
+            "detail": "attachments has 2 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-audit_events",
+            "outcome": "fail",
+            "evidence_sha256": "742c8f8caa50a5f05d3ef8e3380c3544f77dda1769c216a38be0d6b5d3c53e78",
+            "detail": "audit_events has 1284 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-comments",
+            "outcome": "fail",
+            "evidence_sha256": "f85896bb9c5b787931d38a84cd33bdb93c257d80183b6d61a6d176d6f978c116",
+            "detail": "comments has 2 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-invites",
+            "outcome": "fail",
+            "evidence_sha256": "a69d762b4e2a98cafd6b905732c61c496301dfcd11871064ab773fc87d16fc94",
+            "detail": "invites has 2 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-tasks",
+            "outcome": "fail",
+            "evidence_sha256": "2d582e00e18a6e6565e4fb822e8d9ec7a21635b6e0a85219cb77ff26ff48811e",
+            "detail": "tasks has 2 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-users",
+            "outcome": "fail",
+            "evidence_sha256": "350ae7ec6d4a9ca8f1e8568fea1a13631f7d02bbc7bd3ba6ea4f67ff863113c0",
+            "detail": "users has 2 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-config-backups",
+            "outcome": "fail",
+            "evidence_sha256": "78a29a286e963222ea96e499c9b6b68c7cf3a59374ccbff39e53087c72cd6381",
+            "detail": "configured retention is 90 days; contract maximum is 30",
+            "trace_id": null
+          },
+          "fallback": null
+        }
+      ],
+      "verdict": "violated"
+    },
+    {
+      "promise": {
+        "id": "P-017",
+        "kind": "retention_limit",
+        "actor": "Tasklane",
+        "object": "database snapshots",
+        "includes": [],
+        "trigger": "contract.terminated",
+        "deadline_days": 30,
+        "source": {
+          "document": "Northwind_DPA_v3.pdf",
+          "clause": "7.2",
+          "text": "database snapshots must not remain available beyond 30 days"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-017-cloud-snapshots",
+          "kind": "config",
+          "template": "cloud.backup_retention",
+          "params": {
+            "response": "AccessDenied",
+            "maximum_days": 30
+          },
+          "depends_on": [
+            "aws:rds:tasklane-primary"
+          ],
+          "fallback": {
+            "id": "P-017-terraform-fallback",
+            "kind": "config",
+            "template": "terraform.maximum_retention",
+            "params": {
+              "path": "infra/database.tf",
+              "attribute": "backup_retention_period",
+              "maximum_days": 30
+            },
+            "depends_on": [
+              "infra/database.tf"
+            ],
+            "fallback": null
+          }
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-017-cloud-snapshots",
+            "outcome": "error",
+            "evidence_sha256": "fbfd69d11eb6b5d9822e98793c78c30b9285ea626366b9f22bd917ee1dcafbbd",
+            "detail": "PermissionError: AccessDenied",
+            "trace_id": null
+          },
+          "fallback": {
+            "probe_id": "P-017-terraform-fallback",
+            "outcome": "pass",
+            "evidence_sha256": "3d89b5493f4589acf4a2f1f3e0e9249a9ae7d5b379cb935067bf67170d785032",
+            "detail": "configured retention is 30 days; contract maximum is 30",
+            "trace_id": null
+          }
+        }
+      ],
+      "verdict": "holds"
+    },
+    {
+      "promise": {
+        "id": "P-031",
+        "kind": "notice_period",
+        "actor": "Tasklane",
+        "object": "subprocessor list",
+        "includes": [],
+        "trigger": "subprocessor.added",
+        "deadline_days": 30,
+        "source": {
+          "document": "Northwind_DPA_v3.pdf",
+          "clause": "11.3",
+          "text": "notify customers 30 days before adding a subprocessor"
+        }
+      },
+      "probes": [],
+      "runs": [],
+      "verdict": "unverifiable"
+    }
+  ]
+}

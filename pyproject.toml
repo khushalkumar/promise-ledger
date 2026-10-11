@@ -5,6 +5,7 @@ description = "Evidence-backed contract promise verification agent"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "neatlogs[openai]>=1.4.26,<2",
   "pydantic>=2.11,<3",
   "python-hcl2>=7.3,<8",
   "typer>=0.16,<1",

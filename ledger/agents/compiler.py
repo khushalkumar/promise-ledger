@@ -1,8 +1,11 @@
 from datetime import UTC, datetime
 
+import neatlogs
+
 from ledger.models import AssetMap, Probe, ProbeKind, Promise, PromiseKind
 
 
+@neatlogs.span(kind="AGENT", name="check_compiler")
 def compile_checks(promise: Promise, assets: AssetMap) -> list[Probe]:
     if promise.kind is PromiseKind.RETENTION_LIMIT:
         database_files = [
