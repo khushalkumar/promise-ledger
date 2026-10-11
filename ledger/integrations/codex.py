@@ -44,8 +44,6 @@ class CodexCodingAgent:
                 self.binary,
                 "exec",
                 *_azure_provider_arguments(),
-                "--config",
-                "mcp_servers.neatlogs.enabled=false",
                 "--json",
                 "--approve-for-me",
                 "--dangerously-bypass-hook-trust",

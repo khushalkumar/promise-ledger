@@ -190,7 +190,7 @@ def test_codex_coding_agent_bypasses_pretrusted_hooks_for_automation(tmp_path):
     assert "--dangerously-bypass-hook-trust" in commands[0]
     assert "--approve-for-me" in commands[0]
     assert "--sandbox" not in commands[0]
-    assert "mcp_servers.neatlogs.enabled=false" in commands[0]
+    assert not any("mcp_servers." in part for part in commands[0])
 
 
 def test_codex_coding_agent_uses_azure_responses_provider_from_environment(
