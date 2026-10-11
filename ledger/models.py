@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -31,6 +32,18 @@ class Verdict(StrEnum):
     VIOLATED = "violated"
     AT_RISK = "at_risk"
     UNVERIFIABLE = "unverifiable"
+
+
+class WorkflowStage(StrEnum):
+    CREATED = "created"
+    EXTRACTING = "extracting"
+    AUDITING = "auditing"
+    INVESTIGATING = "investigating"
+    REMEDIATING = "remediating"
+    PULL_REQUESTS_OPEN = "pull_requests_open"
+    RECHECKING = "rechecking"
+    COMPLETED = "completed"
+    FAILED = "failed"
 
 
 class SourceSpan(BaseModel):
@@ -123,3 +136,60 @@ class LedgerRun(BaseModel):
     conflicts: list[PromiseConflict] = Field(default_factory=list)
     metrics: RunMetrics | None = None
     inventory: AssetMap | None = None
+
+
+class RootCause(BaseModel):
+    id: str
+    promise_id: str
+    probe_ids: list[str]
+    category: str
+    file_path: str
+    line_start: int | None = None
+    summary: str
+    fix_goal: str
+
+
+class RootCauseBatch(BaseModel):
+    root_causes: list[RootCause]
+
+
+class AgentChange(BaseModel):
+    changed_files: list[str]
+    summary: str
+    tests: list[str]
+    session_id: str | None = None
+
+
+class PullRequestRef(BaseModel):
+    number: int
+    url: str
+    branch: str
+    commit_sha: str
+    created: bool
+
+
+class RemediationResult(BaseModel):
+    root_cause: RootCause
+    change: AgentChange | None
+    pull_request: PullRequestRef
+
+
+class WorkflowEvent(BaseModel):
+    stage: WorkflowStage
+    payload: dict[str, object] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class WorkflowRun(BaseModel):
+    id: str
+    target_repository: str
+    stage: WorkflowStage
+    events: list[WorkflowEvent]
+
+
+class AutonomousRunResult(BaseModel):
+    run_id: str
+    baseline: LedgerRun
+    root_causes: list[RootCause]
+    remediations: list[RemediationResult]
+    rechecked: LedgerRun
