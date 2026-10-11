@@ -303,6 +303,16 @@ def test_render_agent_script_uses_azure_codex_and_stable_run_id():
 
     assert "PROMISE_LEDGER_RUN_ID" in script
     assert "PROMISE_LEDGER_AZURE_API_KEY" in script
+    assert "PROMISE_LEDGER_AZURE_REASONING_EFFORT" in script
     assert "OPENAI_API_KEY" not in script
     assert '--run-id "${run_id}"' in script
     assert 'gh repo clone "${TARGET_REPOSITORY}"' in script
+
+
+def test_render_trigger_script_keeps_token_out_of_command_line():
+    script = (Path(__file__).parents[1] / "scripts" / "trigger-render-agent.sh").read_text()
+
+    assert "promise-ledger-render-trigger" in script
+    assert 'Authorization: Bearer ${trigger_token}' in script
+    assert "/api/agent-runs/status" in script
+    assert "PROMISE_LEDGER_TRIGGER_TOKEN=" not in script

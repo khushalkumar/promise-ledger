@@ -54,6 +54,8 @@ The live audit normally takes approximately 15–30 seconds. Do not type any cre
 | Prepared live-run Terminal | I will open this immediately before recording | One command waiting at the prompt. You press **Enter once**. No credential values will be visible. |
 | Baseline audit UI | <http://127.0.0.1:8000> | Promise Ledger page. `P-014` is red and says **VIOLATED**. This is also the fallback if the live run is delayed. |
 | Live result UI | <http://127.0.0.1:8002> | The result created while recording. I will prepare this address to display the new run after it finishes. |
+| Public hosted UI | <https://promise-ledger.onrender.com> | The deployed Render service. Before its first hosted completion it shows verified fallback evidence; afterward it shows the newest durable PostgreSQL result. |
+| Hosted agent trigger | [`scripts/trigger-render-agent.sh`](../scripts/trigger-render-agent.sh) | Starts the protected Render autonomous workflow and polls it to completion without printing credentials. This is used for rehearsal and hosted verification, not inside the three-minute take. |
 | Neatlogs trace list | [Promise Ledger traces](https://app.neatlogs.com/traces?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | The newest Promise Ledger run should appear first after refreshing. |
 | Verified Neatlogs fallback | [Trace `279e...c551`](https://app.neatlogs.com/traces/279e6c54faac9ee0a38d05177481c551?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | A 37-span run showing workflow, agents, tools, guardrails, input, and output. Use this if the fresh trace has not appeared yet. |
 | Tasklane fix 1 | [Tasklane PR #3](https://github.com/khushalkumar/tasklane-demo/pull/3) | Runtime-created normal PR adding `audit_events` to the deletion job. Its checks pass. |
@@ -104,6 +106,11 @@ I will prepare these tabs in order:
 11. Business-plan PDF.
 
 I will also run one rehearsal before the final take. The rehearsal verifies execution time, the live result page, and trace delivery. It is not the submitted recording.
+
+Before that rehearsal, I will run `scripts/trigger-render-agent.sh` once outside the
+recording. That hosted verification is complete only when Render reports `completed`,
+GitHub contains the resulting normal PRs, Neatlogs contains the new trace, and the public
+UI returns the same run ID from `/api/runs/latest`.
 
 Close unrelated tabs and hide bookmarks, notifications, email, Slack, and anything containing credentials. Keep both Tasklane pull requests unmerged.
 

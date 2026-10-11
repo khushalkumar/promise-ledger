@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict
 from ledger.models import AgentChange, RootCause
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
+AZURE_CODEX_DEPLOYMENT = "gpt-5.6-sol"
 
 
 class AgentChangeOutput(BaseModel):
@@ -43,6 +44,7 @@ class CodexCodingAgent:
             command = [
                 self.binary,
                 "exec",
+                "--ignore-user-config",
                 *_azure_provider_arguments(),
                 "--json",
                 "--approve-for-me",
@@ -104,11 +106,21 @@ def _azure_provider_arguments() -> list[str]:
     if not endpoint.endswith("/openai/v1"):
         endpoint = f"{endpoint}/openai/v1"
     deployment = str(values["deployment"])
+    if deployment != AZURE_CODEX_DEPLOYMENT:
+        raise ValueError(
+            f"Promise Ledger requires GPT-5.6 Sol ({AZURE_CODEX_DEPLOYMENT})"
+        )
+    reasoning_effort = os.getenv("PROMISE_LEDGER_AZURE_REASONING_EFFORT", "high")
+    allowed_efforts = {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
+    if reasoning_effort not in allowed_efforts:
+        raise ValueError("Invalid PROMISE_LEDGER_AZURE_REASONING_EFFORT")
     return [
         "--model",
         deployment,
         "--config",
         'model_provider="promise_ledger_azure"',
+        "--config",
+        f'model_reasoning_effort="{reasoning_effort}"',
         "--config",
         'model_providers.promise_ledger_azure.name="Azure OpenAI"',
         "--config",

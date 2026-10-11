@@ -210,7 +210,8 @@ def test_codex_coding_agent_uses_azure_responses_provider_from_environment(
 
     monkeypatch.setenv("PROMISE_LEDGER_AZURE_ENDPOINT", "https://example.openai.azure.com/")
     monkeypatch.setenv("PROMISE_LEDGER_AZURE_API_KEY", "secret-not-in-command")
-    monkeypatch.setenv("PROMISE_LEDGER_AZURE_DEPLOYMENT", "gpt-4.1")
+    monkeypatch.setenv("PROMISE_LEDGER_AZURE_DEPLOYMENT", "gpt-5.6-sol")
+    monkeypatch.setenv("PROMISE_LEDGER_AZURE_REASONING_EFFORT", "high")
     agent = CodexCodingAgent(binary="codex", runner=runner)
     cause = RootCause(
         id="rc-1",
@@ -225,8 +226,10 @@ def test_codex_coding_agent_uses_azure_responses_provider_from_environment(
     agent.implement(worktree=worktree, root_cause=cause, prompt="Fix it")
 
     command = commands[0]
-    assert command[command.index("--model") + 1] == "gpt-4.1"
+    assert command[command.index("--model") + 1] == "gpt-5.6-sol"
+    assert "--ignore-user-config" in command
     assert 'model_provider="promise_ledger_azure"' in command
+    assert 'model_reasoning_effort="high"' in command
     assert (
         'model_providers.promise_ledger_azure.base_url="https://example.openai.azure.com/openai/v1"'
         in command
@@ -237,6 +240,27 @@ def test_codex_coding_agent_uses_azure_responses_provider_from_environment(
     )
     assert 'model_providers.promise_ledger_azure.wire_api="responses"' in command
     assert "secret-not-in-command" not in " ".join(command)
+
+
+def test_codex_coding_agent_rejects_non_sol_azure_deployment(monkeypatch):
+    monkeypatch.setenv("PROMISE_LEDGER_AZURE_ENDPOINT", "https://example.openai.azure.com/")
+    monkeypatch.setenv("PROMISE_LEDGER_AZURE_API_KEY", "secret")
+    monkeypatch.setenv("PROMISE_LEDGER_AZURE_DEPLOYMENT", "gpt-4.1")
+
+    with pytest.raises(ValueError, match="GPT-5.6 Sol"):
+        CodexCodingAgent(binary="codex").implement(
+            worktree=Path("/tmp/worktree"),
+            root_cause=RootCause(
+                id="rc-1",
+                promise_id="P-014",
+                probe_ids=["probe-1"],
+                category="source_code",
+                file_path="app.py",
+                summary="Bug.",
+                fix_goal="Fix bug.",
+            ),
+            prompt="Fix it",
+        )
 
 
 def test_codex_coding_agent_surfaces_cli_failure_without_command_dump(tmp_path):

@@ -178,11 +178,18 @@ agent_run_command
 | --- | --- |
 | `PROMISE_LEDGER_AZURE_ENDPOINT`, `PROMISE_LEDGER_AZURE_API_KEY`, `PROMISE_LEDGER_AZURE_DEPLOYMENT`, `PROMISE_LEDGER_AZURE_API_VERSION` | JSON model backend |
 | `NEATLOGS_API_KEY` | Runtime tracing |
-| `OPENAI_API_KEY`, `CODEX_BINARY` | Coding-agent authentication and executable |
+| `OPENAI_API_KEY`, `CODEX_BINARY` | Direct OpenAI fallback authentication and coding-agent executable |
 | `PROMISE_LEDGER_STATE_DATABASE` | Durable SQLite/PostgreSQL state and UI source |
 | `PROMISE_LEDGER_RUN` | JSON UI source when no durable DB is configured |
 | `NEATLOGS_TRACE_URL_TEMPLATE` | UI trace-link pattern; must contain `{trace_id}` |
 | `TARGET_DATABASE_URL`, `TARGET_REPOSITORY`, `GH_TOKEN` | Cloud job target and GitHub access |
+| `PROMISE_LEDGER_ENABLE_AGENT`, `PROMISE_LEDGER_TRIGGER_TOKEN` | Enable and authenticate the hosted autonomous-run API |
+
+When all `PROMISE_LEDGER_AZURE_*` values are present, headless Codex uses the Azure
+Responses endpoint through a custom provider. The `api-key` header is populated from
+`PROMISE_LEDGER_AZURE_API_KEY`; the secret is never placed in the process command.
+The deployment is intentionally locked to `gpt-5.6-sol` with high reasoning so hosted
+and local remediation use the same tested model.
 
 See `docs/gcp-deployment.md` for GCP IAM and secret setup. No secret value belongs in source control.
 
@@ -238,3 +245,22 @@ The initial proof rendered saved JSON and used manually prepared remediation PRs
 ## 17. Complete execution walkthrough
 
 The cloud job clones Tasklane, seeds its database, and starts `agent-run`. The CLI either loads a durable baseline for the requested run ID or extracts three documents, applies stable IDs, inventories Tasklane, asks the grounded compiler to validate its safe candidates, and executes bounded read-only probes. The verdict engine stores the baseline. For safe deletion violations, Entire and git evidence constrain the investigator; stable root causes drive isolated Codex worktrees. Each change is tested, committed with the configured Git identity, pushed, and opened as a normal GitHub PR. A clean worktree combines all commit SHAs, runs the target's own verification recipe, and rechecks only affected probes. The final ledger is stored in PostgreSQL/SQLite, linked to Neatlogs traces, returned as JSON, and served by the UI and `/api/runs/latest`.
+
+## 18. Render hackathon deployment
+
+The Render web service serves the evidence UI and also exposes two administrator-only
+endpoints:
+
+- `POST /api/agent-runs` starts one autonomous run in a background thread.
+- `GET /api/agent-runs/status` returns the current process status.
+
+Both require `Authorization: Bearer <PROMISE_LEDGER_TRIGGER_TOKEN>`. Parallel starts
+return HTTP 409. `scripts/render-agent-run.sh` clones the configured private target,
+seeds an isolated target database, and invokes `ledger agent-run` with a stable run ID.
+The UI reads the latest completed result from Render Postgres and falls back to the
+checked-in verified evidence before the first completed hosted run.
+
+This is a zero-cost hackathon deployment, not an always-on production SLA. Render's
+free web instance can spin down, and its free Postgres instance expires after 30 days.
+The application architecture keeps PostgreSQL replaceable so a paid Render database or
+another durable PostgreSQL provider can be substituted without code changes.

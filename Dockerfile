@@ -30,7 +30,10 @@ COPY --chown=app:app contracts ./contracts
 COPY --chown=app:app scripts ./scripts
 COPY --chown=app:app evidence/run_live_audit.json ./evidence/run_live_audit.json
 RUN uv sync --frozen --no-dev \
-    && chmod +x scripts/cloud-agent-run.sh scripts/render-agent-run.sh
+    && chmod +x \
+      scripts/cloud-agent-run.sh \
+      scripts/render-agent-run.sh \
+      scripts/trigger-render-agent.sh
 
 USER app
 ENV PATH="/app/.venv/bin:/usr/local/bin:${PATH}" \
