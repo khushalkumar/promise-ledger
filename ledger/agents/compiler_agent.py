@@ -49,7 +49,8 @@ def compile_checks_with_agent(
     )
 
     expected_ids = [probe.id for probe in candidates]
-    if selection.selected_probe_ids != expected_ids:
-        raise ValueError("compiler agent must select every required safe probe in order")
+    selected_ids = selection.selected_probe_ids
+    if len(selected_ids) != len(expected_ids) or set(selected_ids) != set(expected_ids):
+        raise ValueError("compiler agent must select every required safe probe")
 
     return CompiledChecks(probes=candidates, reasoning=selection.grounding_notes)

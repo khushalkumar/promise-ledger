@@ -56,3 +56,26 @@ def test_compiler_agent_rejects_omitted_required_grounded_probe():
             assets,
             StubBackend(["P-014-static-purge"]),
         )
+
+
+def test_compiler_agent_accepts_model_reordering_but_preserves_candidate_order():
+    assets = AssetMap(
+        tenant_tables=["users", "audit_events"],
+        source_files=["tasklane/jobs/purge_tenant.py"],
+        terraform_files=["infra/storage.tf"],
+    )
+    deletion = promise("P-014", PromiseKind.DELETION_DEADLINE, "customer personal data")
+    expected_ids = [
+        "P-014-static-purge",
+        "P-014-data-users",
+        "P-014-data-audit_events",
+        "P-014-config-backups",
+    ]
+
+    result = compile_checks_with_agent(
+        deletion,
+        assets,
+        StubBackend(list(reversed(expected_ids))),
+    )
+
+    assert [probe.id for probe in result.probes] == expected_ids
