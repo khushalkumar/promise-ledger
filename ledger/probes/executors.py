@@ -100,6 +100,7 @@ def _purge_covers_tables(probe: Probe, context: ProbeContext) -> tuple[ProbeOutc
         for node in ast.walk(tree)
         if isinstance(node, ast.Constant) and isinstance(node.value, str)
     }
+    referenced_tables.update(_imported_tenant_registry_tables(tree, context.target_root))
     required_tables = {str(table) for table in probe.params["required_tables"]}
     missing = sorted(required_tables - referenced_tables)
     if missing:
@@ -112,13 +113,101 @@ def _maximum_retention(probe: Probe, context: ProbeContext) -> tuple[ProbeOutcom
     with path.open() as terraform:
         configuration = hcl2.load(terraform)
     attribute = str(probe.params.get("attribute", "days"))
-    configured_days = int(_find_first(configuration, attribute))
+    configured_value = _find_first(configuration, attribute)
+    configured_days, capped = _resolve_retention_days(configuration, configured_value)
     maximum_days = int(probe.params["maximum_days"])
+    qualifier = "is capped at" if capped else "is"
     detail = (
-        f"configured retention is {configured_days} days; contract maximum is {maximum_days}"
+        f"configured retention {qualifier} {configured_days} days; "
+        f"contract maximum is {maximum_days}"
     )
     outcome = ProbeOutcome.PASS if configured_days <= maximum_days else ProbeOutcome.FAIL
     return outcome, detail
+
+
+def _imported_tenant_registry_tables(tree: ast.AST, target_root: Path) -> set[str]:
+    imported: list[tuple[str, str]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ImportFrom) or node.module is None:
+            continue
+        for alias in node.names:
+            if alias.name == "TENANT_TABLES":
+                imported.append((node.module, alias.asname or alias.name))
+    used_names = {
+        node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
+    }
+    tables: set[str] = set()
+    for module, local_name in imported:
+        if local_name not in used_names:
+            continue
+        module_path = _target_path(target_root, module.replace(".", "/") + ".py")
+        module_tree = ast.parse(module_path.read_text())
+        table_symbols: dict[str, str] = {}
+        registry_value: ast.AST | None = None
+        for node in module_tree.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            names = [target.id for target in node.targets if isinstance(target, ast.Name)]
+            if "TENANT_TABLES" in names:
+                registry_value = node.value
+            if (
+                len(names) == 1
+                and isinstance(node.value, ast.Call)
+                and isinstance(node.value.func, ast.Name)
+                and node.value.func.id == "Table"
+                and node.value.args
+                and isinstance(node.value.args[0], ast.Constant)
+                and isinstance(node.value.args[0].value, str)
+            ):
+                table_symbols[names[0]] = node.value.args[0].value
+        if registry_value is not None:
+            registry_symbols = {
+                node.id for node in ast.walk(registry_value) if isinstance(node, ast.Name)
+            }
+            tables.update(
+                table_name
+                for symbol, table_name in table_symbols.items()
+                if symbol in registry_symbols
+            )
+    return tables
+
+
+def _resolve_retention_days(
+    configuration: dict[str, Any], configured_value: object
+) -> tuple[int, bool]:
+    if isinstance(configured_value, int | float):
+        return int(configured_value), False
+    if not isinstance(configured_value, str):
+        raise ValueError("retention value is not numeric")
+    match = re.fullmatch(r"\$\{var\.([A-Za-z_][A-Za-z0-9_]*)\}", configured_value)
+    if match is None:
+        raise ValueError(f"retention value is not a supported variable: {configured_value}")
+    variable_name = match.group(1)
+    variable = next(
+        (
+            item[variable_name]
+            for item in configuration.get("variable", [])
+            if variable_name in item
+        ),
+        None,
+    )
+    if not isinstance(variable, dict):
+        raise ValueError(f"Terraform variable is not defined: {variable_name}")
+    upper_bounds = [
+        int(bound)
+        for validation in variable.get("validation", [])
+        for bound in re.findall(
+            rf"\bvar\.{re.escape(variable_name)}\s*<=\s*(\d+)\b",
+            str(validation.get("condition", "")),
+        )
+    ]
+    if not upper_bounds:
+        raise ValueError(f"Terraform variable has no provable maximum: {variable_name}")
+    configured_maximum = min(upper_bounds)
+    default = variable.get("default")
+    if isinstance(default, int | float) and int(default) > configured_maximum:
+        raise ValueError(f"Terraform variable default exceeds its maximum: {variable_name}")
+    return configured_maximum, True
 
 
 def _allowed_regions(probe: Probe, context: ProbeContext) -> tuple[ProbeOutcome, str]:

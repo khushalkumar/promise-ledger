@@ -61,6 +61,36 @@ def test_static_probe_reports_a_missing_tenant_table(tmp_path):
     assert detail == "purge omits tenant table(s): audit_events"
 
 
+def test_static_probe_resolves_imported_tenant_table_registry(tmp_path):
+    database_module = tmp_path / "tasklane" / "db.py"
+    database_module.parent.mkdir()
+    database_module.write_text(
+        'users = Table("users")\n'
+        'tasks = Table("tasks")\n'
+        'audit_events = Table("audit_events")\n'
+        "TENANT_TABLES = {table.name: table for table in (users, tasks, audit_events)}\n"
+    )
+    source = tmp_path / "tasklane" / "jobs" / "purge_tenant.py"
+    source.parent.mkdir()
+    source.write_text(
+        "from tasklane.db import TENANT_TABLES\n"
+        "for table in TENANT_TABLES.values():\n"
+        "    delete(table)\n"
+    )
+    probe = make_probe(
+        "static.purge_covers_tables",
+        {
+            "path": "tasklane/jobs/purge_tenant.py",
+            "required_tables": ["users", "tasks", "audit_events"],
+        },
+    )
+
+    outcome, detail = execute_probe(probe, context(tmp_path))
+
+    assert outcome is ProbeOutcome.PASS
+    assert detail == "purge covers every required tenant table"
+
+
 def test_terraform_probe_reports_retention_above_contract_limit(tmp_path):
     terraform = tmp_path / "infra" / "storage.tf"
     terraform.parent.mkdir()
@@ -101,6 +131,33 @@ def test_terraform_probe_can_use_rds_retention_as_a_passing_fallback(tmp_path):
 
     assert outcome is ProbeOutcome.PASS
     assert detail == "configured retention is 30 days; contract maximum is 30"
+
+
+def test_terraform_probe_accepts_variable_with_proven_maximum(tmp_path):
+    terraform = tmp_path / "infra" / "storage.tf"
+    terraform.parent.mkdir()
+    terraform.write_text(
+        'variable "backup_retention_days" {\n'
+        "  type = number\n"
+        "  default = 30\n"
+        "  validation {\n"
+        "    condition = var.backup_retention_days >= 1 && var.backup_retention_days <= 30\n"
+        '    error_message = "Retention must not exceed 30 days."\n'
+        "  }\n"
+        "}\n"
+        'resource "aws_s3_bucket_lifecycle_configuration" "backups" {\n'
+        "  rule { expiration { days = var.backup_retention_days } }\n"
+        "}\n"
+    )
+    probe = make_probe(
+        "terraform.maximum_retention",
+        {"path": "infra/storage.tf", "maximum_days": 30},
+    )
+
+    outcome, detail = execute_probe(probe, context(tmp_path))
+
+    assert outcome is ProbeOutcome.PASS
+    assert detail == "configured retention is capped at 30 days; contract maximum is 30"
 
 
 def test_cloud_stub_surfaces_access_denied_as_an_executor_error(tmp_path):

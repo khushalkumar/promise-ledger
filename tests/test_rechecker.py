@@ -62,6 +62,9 @@ def test_configured_rechecker_applies_pr_commits_runs_target_commands_and_rechec
     )
     _git(["add", "tasklane/jobs/purge_tenant.py"], cwd=repository)
     _git(["commit", "-m", "fix purge"], cwd=repository)
+    (repository / "AGENT_CHANGE.md").write_text("Agent verification follow-up.\n")
+    _git(["add", "AGENT_CHANGE.md"], cwd=repository)
+    _git(["commit", "-m", "document agent verification"], cwd=repository)
     code_commit = _git(["rev-parse", "HEAD"], cwd=repository).stdout.strip()
     _git(["switch", "main"], cwd=repository)
 

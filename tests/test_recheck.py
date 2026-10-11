@@ -11,7 +11,7 @@ from ledger.orchestrator import recheck_ledger, run_ledger
 from tests.test_orchestrator import demo_context, promise
 
 
-def test_rechecker_cherry_pick_uses_explicit_khushal_identity(tmp_path):
+def test_rechecker_merge_uses_explicit_khushal_identity(tmp_path):
     commands = []
 
     def runner(command, **kwargs):
@@ -24,7 +24,7 @@ def test_rechecker_cherry_pick_uses_explicit_khushal_identity(tmp_path):
         runner=runner,
     )
 
-    rechecker._cherry_pick("abc123", Path(tmp_path))
+    rechecker._merge_head("abc123", Path(tmp_path))
 
     assert commands == [
         [
@@ -33,7 +33,9 @@ def test_rechecker_cherry_pick_uses_explicit_khushal_identity(tmp_path):
             "user.name=Khushal Kumar",
             "-c",
             "user.email=kkhushal1531@gmail.com",
-            "cherry-pick",
+            "merge",
+            "--no-ff",
+            "--no-edit",
             "abc123",
         ]
     ]

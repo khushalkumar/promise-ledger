@@ -61,7 +61,7 @@ class ConfiguredRechecker:
             added = True
             for commit_sha in commit_shas:
                 self._fetch_commit(commit_sha)
-                self._cherry_pick(commit_sha, worktree)
+                self._merge_head(commit_sha, worktree)
 
             config = TargetConfig.model_validate_json(
                 (worktree / ".promise-ledger.json").read_text()
@@ -92,7 +92,7 @@ class ConfiguredRechecker:
         expanded = [part.replace("{database}", str(database)) for part in command]
         self._run(expanded, cwd=worktree)
 
-    def _cherry_pick(self, commit_sha: str, worktree: Path) -> None:
+    def _merge_head(self, commit_sha: str, worktree: Path) -> None:
         self._run(
             [
                 "git",
@@ -100,7 +100,9 @@ class ConfiguredRechecker:
                 "user.name=Khushal Kumar",
                 "-c",
                 "user.email=kkhushal1531@gmail.com",
-                "cherry-pick",
+                "merge",
+                "--no-ff",
+                "--no-edit",
                 commit_sha,
             ],
             cwd=worktree,

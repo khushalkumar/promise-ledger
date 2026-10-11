@@ -128,10 +128,17 @@ class AutonomousWorkflow:
                 },
             )
             changed_dependencies = sorted({cause.file_path for cause in root_causes})
+            remediated_promise_ids = {cause.promise_id for cause in root_causes}
             affected_probe_ids = sorted(
                 {
                     *self.store.affected_probe_ids(run_id, changed_dependencies),
                     *(probe_id for cause in root_causes for probe_id in cause.probe_ids),
+                    *(
+                        probe.id
+                        for report in baseline.reports
+                        if report.promise.id in remediated_promise_ids
+                        for probe in report.probes
+                    ),
                 }
             )
             commit_shas = [item.pull_request.commit_sha for item in remediations]

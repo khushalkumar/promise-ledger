@@ -122,6 +122,37 @@ def test_autonomous_workflow_opens_prs_and_rechecks_only_impacted_probes(tmp_pat
     ]
 
 
+def test_autonomous_workflow_rechecks_every_probe_for_remediated_promise(tmp_path):
+    class IncompleteInvestigator(StubInvestigator):
+        def investigate(self, report):
+            causes = super().investigate(report)
+            causes[0] = causes[0].model_copy(
+                update={"probe_ids": ["P-014-static-purge"]}
+            )
+            return causes
+
+    store = RunStore(f"sqlite:///{tmp_path / 'state.db'}")
+    rechecker = StubRechecker()
+    workflow = AutonomousWorkflow(
+        store=store,
+        investigator=IncompleteInvestigator(),
+        remediator=StubRemediator(),
+        rechecker=rechecker,
+    )
+
+    workflow.remediate(
+        run_id="run-123",
+        target_repository="khushalkumar/tasklane-demo",
+        baseline=LedgerRun(reports=[_violated_report()], conflicts=[]),
+    )
+
+    assert rechecker.calls[0][0] == [
+        "P-014-config-backups",
+        "P-014-data-audit_events",
+        "P-014-static-purge",
+    ]
+
+
 def test_autonomous_workflow_never_auto_remediates_data_residency(tmp_path):
     deletion = _violated_report()
     residency = deletion.model_copy(
