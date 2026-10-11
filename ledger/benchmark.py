@@ -6,6 +6,7 @@ import neatlogs
 from pydantic import BaseModel
 
 from ledger.models import LedgerRun, ProbeOutcome, PromiseReport, Verdict
+from ledger.tracing import current_trace_id
 
 EXPECTED_VERDICTS = {
     "P-014": Verdict.VIOLATED,
@@ -36,6 +37,7 @@ class CompilerMetrics(BaseModel):
 
 
 class BenchmarkResult(BaseModel):
+    trace_id: str | None = None
     cases: int
     v1: CompilerMetrics
     v2: CompilerMetrics
@@ -83,6 +85,7 @@ def compare_compilers(run: LedgerRun) -> BenchmarkResult:
         )
     )
     return BenchmarkResult(
+        trace_id=current_trace_id(),
         cases=len(details),
         v1=_metrics(details, "v1"),
         v2=_metrics(details, "v2"),

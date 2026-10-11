@@ -91,6 +91,8 @@ Then visit `http://127.0.0.1:8000`.
 - `evidence/run_nine_baseline.json` - repeatable model-free baseline.
 - `evidence/extraction_drift_split.json` - a recorded model-drift case handled by deterministic deduplication.
 - `evidence/benchmark.json` - deterministic v1 vs. v2 compiler comparison over ten seeded cases.
+- `evidence/neatlogs.md` - trace IDs, runtime coverage, benchmark evidence, and verification boundary.
+- `evidence/run_final.md` - compact judge-facing audit, remediation, improvement, and economics index.
 - `evidence/run_remediated.json` - combined re-check of the two open remediation PRs.
 - `evidence/remediation.md` - exact PR, commit, and verification chain.
 - `docs/business_plan.pdf` - measured unit economics, three operating scenarios, and the cfo.ai entry model.

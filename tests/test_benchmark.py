@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from ledger import benchmark as benchmark_module
 from ledger.benchmark import compare_compilers, v1_verdict
 from ledger.models import LedgerRun, Verdict
 
@@ -34,3 +35,12 @@ def test_benchmark_shows_grounded_compiler_eliminates_seeded_mismatches():
     assert benchmark.v2.false_holds == 0
     serialized = json.loads(benchmark.model_dump_json())
     assert serialized["v2"]["unverifiable"] == 2
+
+
+def test_benchmark_keeps_the_active_neatlogs_trace_id(monkeypatch):
+    trace_id = "abcdef0123456789abcdef0123456789"
+    monkeypatch.setattr(benchmark_module, "current_trace_id", lambda: trace_id)
+
+    benchmark = compare_compilers(live_run())
+
+    assert benchmark.trace_id == trace_id
