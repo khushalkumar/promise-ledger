@@ -31,4 +31,4 @@ The purge hit identifies the exact function containing the deliberately omitted 
 
 ## Checkpoint boundary
 
-The seven Codex hooks were reviewed and approved on October 11, 2026, and the approval warning is gone. This post-approval session is being used to produce the final checkpoint evidence. No checkpoint ID is claimed yet.
+The seven Codex hooks were reviewed and approved on October 11, 2026, and the approval warning is gone. Post-approval Codex session `01a129f6-9498-7f21-9e0a-c5e781c2821b` produced Entire checkpoint `01M4MZGFHEEK939T4JXBCBWNZH`, attached to commit `14059612e7ab1fbb6024275cc6912f99f65bd463`. Machine-readable list and explanation exports are stored in `evidence/entire_checkpoints.json` and `evidence/entire_checkpoint_explain.json`.
