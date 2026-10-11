@@ -85,6 +85,6 @@ def _merge_same_clause(left: Promise, right: Promise) -> Promise:
 
 
 def _registry_key(promise: Promise) -> str:
-    clause_match = re.match(r"\s*(\d+(?:\.\d+)*)", promise.source.clause)
-    clause = clause_match.group(1) if clause_match else promise.source.clause.strip().lower()
+    clause_match = re.search(r"\d+(?:\.\d+)*", promise.source.clause)
+    clause = clause_match.group(0) if clause_match else promise.source.clause.strip().lower()
     return "|".join([promise.source.document, clause, promise.kind.value])

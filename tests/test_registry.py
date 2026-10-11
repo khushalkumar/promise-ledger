@@ -62,7 +62,7 @@ def test_registry_uses_unique_clause_candidate_when_model_kind_drifts():
             "deadline_days": 90,
             "source": {
                 "document": "privacy_policy.md",
-                "clause": "5. Data retention",
+                "clause": "§ 5. Data retention",
                 "text": "may retain customer personal data and backups for up to 90 days",
             },
         }
