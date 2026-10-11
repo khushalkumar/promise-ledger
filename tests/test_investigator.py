@@ -141,6 +141,31 @@ def test_evidence_investigator_retries_entire_with_fast_profile(tmp_path):
     assert commands[1][commands[1].index("--profile") + 1] == "fast"
 
 
+def test_evidence_investigator_falls_back_to_grounded_repository_files(tmp_path):
+    purge = tmp_path / "tasklane/jobs/purge_tenant.py"
+    storage = tmp_path / "infra/storage.tf"
+    purge.parent.mkdir(parents=True)
+    storage.parent.mkdir(parents=True)
+    purge.write_text('PURGE_TABLES = ("comments",)\n')
+    storage.write_text("backup_retention_days = 90\n")
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        if command[:2] == ["entire", "graph"]:
+            raise subprocess.CalledProcessError(1, command, stderr="graph unavailable")
+        return subprocess.CompletedProcess(command, 0, stdout="commit abc123\n", stderr="")
+
+    investigator = EvidenceInvestigator(tmp_path, StubBackend(), runner=runner)
+
+    causes = investigator.investigate(_violated_report())
+
+    assert causes
+    assert commands[0][commands[0].index("--profile") + 1] == "full"
+    assert commands[1][commands[1].index("--profile") + 1] == "fast"
+    assert commands[2][:2] == ["git", "log"]
+
+
 def test_investigator_canonicalizes_paths_and_merges_duplicate_file_causes(tmp_path):
     class DuplicateBackend:
         def complete_json(self, system: str, user: str) -> str:

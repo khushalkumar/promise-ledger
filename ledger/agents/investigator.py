@@ -44,6 +44,27 @@ class EvidenceInvestigator:
             for run in report.runs
             if run.effective_result.outcome is ProbeOutcome.FAIL
         )[:1000]
+        try:
+            entire_context, history = self._entire_context(query)
+        except (
+            FileNotFoundError,
+            KeyError,
+            ValueError,
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+        ):
+            entire_context, history = self._repository_context(report)
+        return investigate_violation(
+            report,
+            target_root=self.target_root,
+            backend=self.backend,
+            entire_context=entire_context[:20_000],
+            git_context=history.stdout[:20_000],
+        )
+
+    def _entire_context(
+        self, query: str
+    ) -> tuple[str, subprocess.CompletedProcess[str]]:
         search = self._run(
             [
                 "entire",
@@ -93,13 +114,38 @@ class EvidenceInvestigator:
                 "5",
             ]
         )
-        return investigate_violation(
-            report,
-            target_root=self.target_root,
-            backend=self.backend,
-            entire_context=impact.stdout[:20_000],
-            git_context=history.stdout[:20_000],
+        return impact.stdout, history
+
+    def _repository_context(
+        self, report: PromiseReport
+    ) -> tuple[str, subprocess.CompletedProcess[str]]:
+        paths = []
+        sections = ["Entire Graph unavailable; grounded repository fallback:"]
+        for probe, run in zip(report.probes, report.runs, strict=True):
+            if run.effective_result.outcome is not ProbeOutcome.FAIL:
+                continue
+            candidate = probe.params.get("path")
+            if not isinstance(candidate, str) or candidate in paths:
+                continue
+            path = (self.target_root / candidate).resolve()
+            if not path.is_relative_to(self.target_root) or not path.is_file():
+                continue
+            paths.append(candidate)
+            sections.append(f"\n--- {candidate} ---\n{path.read_text(errors='replace')[:8_000]}")
+        if not paths:
+            raise ValueError("no grounded repository files for the failed probes")
+        history = self._run_once(
+            [
+                "git",
+                "log",
+                "--format=commit %H%nAuthor: %an <%ae>%n%s",
+                "-n",
+                "5",
+                "--",
+                *paths,
+            ]
         )
+        return "".join(sections), history
 
     def _run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
         try:
