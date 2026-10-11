@@ -1,3 +1,4 @@
+import json
 from collections.abc import Sequence
 
 import neatlogs
@@ -11,8 +12,26 @@ from ledger.probes.runner import run_probe
 from ledger.verdict import evaluate_verdict
 
 
-@neatlogs.span(kind="WORKFLOW", name="ledger_run")
 def run_ledger(promises: Sequence[Promise], context: ProbeContext) -> LedgerRun:
+    with neatlogs.trace(name="ledger_run", kind="WORKFLOW") as span:
+        span.set_attribute(
+            "input.value",
+            json.dumps(
+                {
+                    "promises": [promise.model_dump(mode="json") for promise in promises],
+                    "target_root": str(context.target_root),
+                    "database": str(context.database),
+                }
+            ),
+        )
+        span.set_attribute("input.mime_type", "application/json")
+        ledger_run = _run_ledger(promises, context)
+        span.set_attribute("output.value", ledger_run.model_dump_json())
+        span.set_attribute("output.mime_type", "application/json")
+        return ledger_run
+
+
+def _run_ledger(promises: Sequence[Promise], context: ProbeContext) -> LedgerRun:
     graph_query = " ".join(
         [
             "contract compliance",

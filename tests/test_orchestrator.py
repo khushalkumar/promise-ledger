@@ -1,5 +1,7 @@
 import sqlite3
+from contextlib import contextmanager
 
+from ledger import orchestrator
 from ledger.models import Promise, PromiseKind, SourceSpan, Verdict
 from ledger.orchestrator import run_ledger
 from ledger.probes.executors import ProbeContext
@@ -91,3 +93,26 @@ def test_run_includes_cross_document_conflicts(tmp_path):
     ledger_run = run_ledger([dpa, policy], demo_context(tmp_path))
 
     assert [conflict.id for conflict in ledger_run.conflicts] == ["C-003"]
+
+
+def test_run_opens_one_explicit_neatlogs_workflow_root(monkeypatch, tmp_path):
+    events = []
+
+    class TraceSpan:
+        def set_attribute(self, name, value):
+            pass
+
+    @contextmanager
+    def trace(name, kind):
+        events.append(("enter", name, kind))
+        yield TraceSpan()
+        events.append(("exit", name, kind))
+
+    monkeypatch.setattr(orchestrator.neatlogs, "trace", trace)
+
+    run_ledger([], demo_context(tmp_path))
+
+    assert events == [
+        ("enter", "ledger_run", "WORKFLOW"),
+        ("exit", "ledger_run", "WORKFLOW"),
+    ]
