@@ -79,3 +79,34 @@ def test_compiler_agent_accepts_model_reordering_but_preserves_candidate_order()
     )
 
     assert [probe.id for probe in result.probes] == expected_ids
+
+
+def test_compiler_agent_repairs_one_incomplete_selection():
+    assets = AssetMap(
+        tenant_tables=["users"],
+        source_files=["tasklane/jobs/purge_tenant.py"],
+        terraform_files=[],
+    )
+    deletion = promise("P-014", PromiseKind.DELETION_DEADLINE, "customer personal data")
+
+    class RepairingBackend:
+        calls = 0
+
+        def complete_json(self, system: str, user: str) -> str:
+            self.calls += 1
+            selected = [] if self.calls == 1 else ["P-014-static-purge", "P-014-data-users"]
+            return json.dumps(
+                {
+                    "selected_probe_ids": selected,
+                    "grounding_notes": "Repaired complete selection.",
+                }
+            )
+
+    backend = RepairingBackend()
+    result = compile_checks_with_agent(deletion, assets, backend)
+
+    assert backend.calls == 2
+    assert [probe.id for probe in result.probes] == [
+        "P-014-static-purge",
+        "P-014-data-users",
+    ]

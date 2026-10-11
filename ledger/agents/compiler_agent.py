@@ -44,13 +44,24 @@ def compile_checks_with_agent(
         "safe_candidate_probes": [probe.model_dump(mode="json") for probe in candidates],
         "response_schema": CompilerSelection.model_json_schema(),
     }
-    selection = CompilerSelection.model_validate_json(
-        backend.complete_json(SYSTEM_PROMPT, json.dumps(request, indent=2))
-    )
-
     expected_ids = [probe.id for probe in candidates]
-    selected_ids = selection.selected_probe_ids
-    if len(selected_ids) != len(expected_ids) or set(selected_ids) != set(expected_ids):
+    user_prompt = json.dumps(request, indent=2)
+    selection: CompilerSelection | None = None
+    for attempt in range(2):
+        system_prompt = SYSTEM_PROMPT
+        if attempt:
+            system_prompt += (
+                "\nYour prior selection was incomplete. Select every safe candidate probe "
+                f"exactly once. Required ids: {json.dumps(expected_ids)}"
+            )
+        selection = CompilerSelection.model_validate_json(
+            backend.complete_json(system_prompt, user_prompt)
+        )
+        selected_ids = selection.selected_probe_ids
+        if len(selected_ids) == len(expected_ids) and set(selected_ids) == set(expected_ids):
+            break
+    else:
         raise ValueError("compiler agent must select every required safe probe")
 
+    assert selection is not None
     return CompiledChecks(probes=candidates, reasoning=selection.grounding_notes)
