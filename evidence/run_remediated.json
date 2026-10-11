@@ -1,0 +1,640 @@
+{
+  "reports": [
+    {
+      "promise": {
+        "id": "P-014",
+        "kind": "deletion_deadline",
+        "actor": "Tasklane",
+        "object": "customer personal data",
+        "includes": [
+          "backups"
+        ],
+        "trigger": "contract.terminated",
+        "deadline_days": 30,
+        "source": {
+          "document": "Northwind_DPA_v3.pdf",
+          "clause": "7.2",
+          "text": "delete customer personal data, including backups, within 30 days"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-014-static-purge",
+          "kind": "static",
+          "template": "static.purge_covers_tables",
+          "params": {
+            "path": "tasklane/jobs/purge_tenant.py",
+            "required_tables": [
+              "attachments",
+              "audit_events",
+              "comments",
+              "invites",
+              "tasks",
+              "users"
+            ]
+          },
+          "depends_on": [
+            "tasklane/jobs/purge_tenant.py",
+            "attachments",
+            "audit_events",
+            "comments",
+            "invites",
+            "tasks",
+            "users"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-attachments",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "attachments",
+            "deadline_days": 30,
+            "now": "2026-10-11T02:58:36.613038+00:00"
+          },
+          "depends_on": [
+            "attachments",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-audit_events",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "audit_events",
+            "deadline_days": 30,
+            "now": "2026-10-11T02:58:36.613038+00:00"
+          },
+          "depends_on": [
+            "audit_events",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-comments",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "comments",
+            "deadline_days": 30,
+            "now": "2026-10-11T02:58:36.613038+00:00"
+          },
+          "depends_on": [
+            "comments",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-invites",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "invites",
+            "deadline_days": 30,
+            "now": "2026-10-11T02:58:36.613038+00:00"
+          },
+          "depends_on": [
+            "invites",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-tasks",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "tasks",
+            "deadline_days": 30,
+            "now": "2026-10-11T02:58:36.613038+00:00"
+          },
+          "depends_on": [
+            "tasks",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-data-users",
+          "kind": "data",
+          "template": "sql.no_rows_after_deadline",
+          "params": {
+            "table": "users",
+            "deadline_days": 30,
+            "now": "2026-10-11T02:58:36.613038+00:00"
+          },
+          "depends_on": [
+            "users",
+            "tenants"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-014-config-backups",
+          "kind": "config",
+          "template": "terraform.maximum_retention",
+          "params": {
+            "path": "infra/storage.tf",
+            "maximum_days": 30
+          },
+          "depends_on": [
+            "infra/storage.tf"
+          ],
+          "fallback": null
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-014-static-purge",
+            "outcome": "pass",
+            "evidence_sha256": "c1e515d9f118436312bc465a25e3f5c63c868a78fd7d33eb113791c5e8f10e7b",
+            "detail": "purge covers every required tenant table",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-attachments",
+            "outcome": "pass",
+            "evidence_sha256": "e0b5b3c94edf151d5ce107de30562aff97983f9891478c9a67e3bafed4a16ccf",
+            "detail": "attachments has 0 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-audit_events",
+            "outcome": "pass",
+            "evidence_sha256": "088ec06fbb2229b6776d12ea5b4e3e75d1d4e497deaf0d245ac66cad4ed4fa06",
+            "detail": "audit_events has 0 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-comments",
+            "outcome": "pass",
+            "evidence_sha256": "62e85e418d5081ffe4e3b9b6eeb1e6889f35fc55fca48727148a2e3e6417f11a",
+            "detail": "comments has 0 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-invites",
+            "outcome": "pass",
+            "evidence_sha256": "a0ce98d85ce7de1fe18d750755ad66b3e9972ec515d41c844fc54eff9354c643",
+            "detail": "invites has 0 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-tasks",
+            "outcome": "pass",
+            "evidence_sha256": "fd0776a60ffc28954c8c31096f9ae01fd8ae040a05c1e43760a24579c19d4135",
+            "detail": "tasks has 0 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-data-users",
+            "outcome": "pass",
+            "evidence_sha256": "4b13d81446185387e3b5271e966d0b4d49b9600e80ae6d64aff769c081ff34ad",
+            "detail": "users has 0 row(s) past the 30-day deadline",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-014-config-backups",
+            "outcome": "pass",
+            "evidence_sha256": "3d89b5493f4589acf4a2f1f3e0e9249a9ae7d5b379cb935067bf67170d785032",
+            "detail": "configured retention is 30 days; contract maximum is 30",
+            "trace_id": null
+          },
+          "fallback": null
+        }
+      ],
+      "verdict": "holds"
+    },
+    {
+      "promise": {
+        "id": "P-017",
+        "kind": "retention_limit",
+        "actor": "Tasklane",
+        "object": "database snapshots",
+        "includes": [],
+        "trigger": "contract.terminated",
+        "deadline_days": 30,
+        "source": {
+          "document": "Northwind_DPA_v3.pdf",
+          "clause": "7.2",
+          "text": "database snapshots must not remain available beyond 30 days"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-017-cloud-snapshots",
+          "kind": "config",
+          "template": "cloud.backup_retention",
+          "params": {
+            "response": "AccessDenied",
+            "maximum_days": 30
+          },
+          "depends_on": [
+            "aws:rds:tasklane-primary"
+          ],
+          "fallback": {
+            "id": "P-017-terraform-fallback",
+            "kind": "config",
+            "template": "terraform.maximum_retention",
+            "params": {
+              "path": "infra/database.tf",
+              "attribute": "backup_retention_period",
+              "maximum_days": 30
+            },
+            "depends_on": [
+              "infra/database.tf"
+            ],
+            "fallback": null
+          }
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-017-cloud-snapshots",
+            "outcome": "error",
+            "evidence_sha256": "fbfd69d11eb6b5d9822e98793c78c30b9285ea626366b9f22bd917ee1dcafbbd",
+            "detail": "PermissionError: AccessDenied",
+            "trace_id": null
+          },
+          "fallback": {
+            "probe_id": "P-017-terraform-fallback",
+            "outcome": "pass",
+            "evidence_sha256": "3d89b5493f4589acf4a2f1f3e0e9249a9ae7d5b379cb935067bf67170d785032",
+            "detail": "configured retention is 30 days; contract maximum is 30",
+            "trace_id": null
+          }
+        }
+      ],
+      "verdict": "holds"
+    },
+    {
+      "promise": {
+        "id": "P-021",
+        "kind": "data_residency",
+        "actor": "Tasklane",
+        "object": "European customer personal data",
+        "includes": [],
+        "trigger": null,
+        "deadline_days": null,
+        "source": {
+          "document": "Northwind_DPA_v3.pdf",
+          "clause": "9.1",
+          "text": "stored and processed only in eu-west-1"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-021-terraform-regions",
+          "kind": "config",
+          "template": "terraform.allowed_regions",
+          "params": {
+            "path": "infra/storage.tf",
+            "allowed_regions": [
+              "eu-west-1"
+            ]
+          },
+          "depends_on": [
+            "infra/storage.tf"
+          ],
+          "fallback": null
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-021-terraform-regions",
+            "outcome": "fail",
+            "evidence_sha256": "2bfcfb72e29a042c7cea1bfbb971bbabdfdc4ed5ec3604048b4167ce0884e949",
+            "detail": "Terraform provider region(s) outside contract: us-east-1",
+            "trace_id": null
+          },
+          "fallback": null
+        }
+      ],
+      "verdict": "violated"
+    },
+    {
+      "promise": {
+        "id": "P-031",
+        "kind": "notice_period",
+        "actor": "Tasklane",
+        "object": "subprocessor list",
+        "includes": [],
+        "trigger": "subprocessor.added",
+        "deadline_days": 30,
+        "source": {
+          "document": "Northwind_DPA_v3.pdf",
+          "clause": "11.3",
+          "text": "notify customers 30 days before adding a subprocessor"
+        }
+      },
+      "probes": [],
+      "runs": [],
+      "verdict": "unverifiable"
+    },
+    {
+      "promise": {
+        "id": "P-040",
+        "kind": "feature_entitlement",
+        "actor": "Tasklane",
+        "object": "SSO configuration for Business plan workspaces",
+        "includes": [],
+        "trigger": null,
+        "deadline_days": null,
+        "source": {
+          "document": "Acme_MSA_2026.pdf",
+          "clause": "4.1",
+          "text": "SSO configuration available to every Business plan workspace"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-040-plans-business-sso",
+          "kind": "config",
+          "template": "json.value_equals",
+          "params": {
+            "path": "config/compliance.json",
+            "key_path": [
+              "plans",
+              "business",
+              "sso"
+            ],
+            "expected": true
+          },
+          "depends_on": [
+            "config/compliance.json"
+          ],
+          "fallback": null
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-040-plans-business-sso",
+            "outcome": "pass",
+            "evidence_sha256": "c1d1d6120e441c724dfba4d239310047e890c4290108880391290093e0ac09e4",
+            "detail": "plans.business.sso is true; expected true",
+            "trace_id": null
+          },
+          "fallback": null
+        }
+      ],
+      "verdict": "holds"
+    },
+    {
+      "promise": {
+        "id": "P-041",
+        "kind": "availability_slo",
+        "actor": "Tasklane",
+        "object": "monthly service availability and credits",
+        "includes": [
+          "service credits"
+        ],
+        "trigger": null,
+        "deadline_days": null,
+        "source": {
+          "document": "Acme_MSA_2026.pdf",
+          "clause": "6.2",
+          "text": "maintain 99.9% monthly service availability with service credits"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-041-availability-target",
+          "kind": "config",
+          "template": "json.value_at_least",
+          "params": {
+            "path": "config/compliance.json",
+            "key_path": [
+              "availability",
+              "monthly_target_percent"
+            ],
+            "minimum": 99.9
+          },
+          "depends_on": [
+            "config/compliance.json"
+          ],
+          "fallback": null
+        },
+        {
+          "id": "P-041-availability-service_credits",
+          "kind": "config",
+          "template": "json.value_equals",
+          "params": {
+            "path": "config/compliance.json",
+            "key_path": [
+              "availability",
+              "service_credits"
+            ],
+            "expected": true
+          },
+          "depends_on": [
+            "config/compliance.json"
+          ],
+          "fallback": null
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-041-availability-target",
+            "outcome": "pass",
+            "evidence_sha256": "ad46c2181baf937eadce01b84faca122ae66188454c5e3e8f42870e69fdac7dd",
+            "detail": "availability.monthly_target_percent is 99.9; minimum is 99.9",
+            "trace_id": null
+          },
+          "fallback": null
+        },
+        {
+          "primary": {
+            "probe_id": "P-041-availability-service_credits",
+            "outcome": "pass",
+            "evidence_sha256": "87c1b6283436cb3fffdae0abff8c94db7f2553cef35f43de9d2c7edb617e165b",
+            "detail": "availability.service_credits is true; expected true",
+            "trace_id": null
+          },
+          "fallback": null
+        }
+      ],
+      "verdict": "holds"
+    },
+    {
+      "promise": {
+        "id": "P-042",
+        "kind": "encryption_at_rest",
+        "actor": "Tasklane",
+        "object": "customer data",
+        "includes": [],
+        "trigger": null,
+        "deadline_days": null,
+        "source": {
+          "document": "Acme_MSA_2026.pdf",
+          "clause": "8.1",
+          "text": "encrypt customer data at rest"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-042-storage-encryption",
+          "kind": "config",
+          "template": "terraform.attribute_equals",
+          "params": {
+            "path": "infra/database.tf",
+            "attribute": "storage_encrypted",
+            "expected": true
+          },
+          "depends_on": [
+            "infra/database.tf"
+          ],
+          "fallback": null
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-042-storage-encryption",
+            "outcome": "pass",
+            "evidence_sha256": "6dbf533f9b541dc314544c64729d83ce73a6089100ffc9303033b05868b2cbc8",
+            "detail": "storage_encrypted is true; expected true",
+            "trace_id": null
+          },
+          "fallback": null
+        }
+      ],
+      "verdict": "holds"
+    },
+    {
+      "promise": {
+        "id": "P-043",
+        "kind": "admin_mfa",
+        "actor": "Tasklane",
+        "object": "administrative accounts",
+        "includes": [],
+        "trigger": null,
+        "deadline_days": null,
+        "source": {
+          "document": "Acme_MSA_2026.pdf",
+          "clause": "8.1",
+          "text": "require multi-factor authentication for administrative accounts"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-043-security-admin_mfa_required",
+          "kind": "config",
+          "template": "json.value_equals",
+          "params": {
+            "path": "config/compliance.json",
+            "key_path": [
+              "security",
+              "admin_mfa_required"
+            ],
+            "expected": true
+          },
+          "depends_on": [
+            "config/compliance.json"
+          ],
+          "fallback": null
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-043-security-admin_mfa_required",
+            "outcome": "pass",
+            "evidence_sha256": "42c166a73090414405cdb6760783adea4c02da702bba88dfe89e8626f331a5f8",
+            "detail": "security.admin_mfa_required is true; expected true",
+            "trace_id": null
+          },
+          "fallback": null
+        }
+      ],
+      "verdict": "holds"
+    },
+    {
+      "promise": {
+        "id": "P-044",
+        "kind": "retention_limit",
+        "actor": "Tasklane",
+        "object": "customer personal data and backups",
+        "includes": [
+          "backups"
+        ],
+        "trigger": "account.closed",
+        "deadline_days": 90,
+        "source": {
+          "document": "privacy_policy.md",
+          "clause": "5",
+          "text": "retain customer personal data and backups for up to 90 days"
+        }
+      },
+      "probes": [
+        {
+          "id": "P-044-storage-retention",
+          "kind": "config",
+          "template": "terraform.maximum_retention",
+          "params": {
+            "path": "infra/storage.tf",
+            "maximum_days": 90
+          },
+          "depends_on": [
+            "infra/storage.tf"
+          ],
+          "fallback": null
+        }
+      ],
+      "runs": [
+        {
+          "primary": {
+            "probe_id": "P-044-storage-retention",
+            "outcome": "pass",
+            "evidence_sha256": "04fc04829e905bd7e88de51dc42a93b91aeff78003cc1208c41baa43d609b71d",
+            "detail": "configured retention is 30 days; contract maximum is 90",
+            "trace_id": null
+          },
+          "fallback": null
+        }
+      ],
+      "verdict": "holds"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "C-003",
+      "promise_ids": [
+        "P-014",
+        "P-044"
+      ],
+      "verdict": "violated",
+      "detail": "Northwind_DPA_v3.pdf limits overlapping data to 30 days, but privacy_policy.md allows 90 days"
+    }
+  ]
+}
