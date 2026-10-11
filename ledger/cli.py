@@ -6,9 +6,10 @@ from typing import Annotated
 import typer
 
 from ledger.agents.extractor import extract_promises
+from ledger.benchmark import compare_compilers
 from ledger.documents import load_document
 from ledger.llm import AzureJsonBackend
-from ledger.models import Promise, RunMetrics
+from ledger.models import LedgerRun, Promise, RunMetrics
 from ledger.orchestrator import run_ledger
 from ledger.probes.executors import ProbeContext
 from ledger.registry import assign_canonical_ids, load_registry
@@ -88,6 +89,30 @@ def audit_command(
             typer.echo(f"{report.promise.id}  {report.verdict}")
         for conflict in ledger_run.conflicts:
             typer.echo(f"{conflict.id}  {conflict.verdict}  {conflict.detail}")
+    finally:
+        finish_tracing(tracing_enabled)
+
+
+@app.command("bench")
+def bench_command(
+    run: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
+    output: Annotated[Path, typer.Option(dir_okay=False)],
+) -> None:
+    tracing_enabled = initialize_tracing(os.getenv("NEATLOGS_API_KEY"))
+    try:
+        benchmark = compare_compilers(LedgerRun.model_validate_json(run.read_text()))
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(benchmark.model_dump_json(indent=2) + "\n")
+        typer.echo(
+            f"v1 mismatches={benchmark.v1.mismatches} "
+            f"false_violations={benchmark.v1.false_violations} "
+            f"false_holds={benchmark.v1.false_holds}"
+        )
+        typer.echo(
+            f"v2 mismatches={benchmark.v2.mismatches} "
+            f"false_violations={benchmark.v2.false_violations} "
+            f"false_holds={benchmark.v2.false_holds}"
+        )
     finally:
         finish_tracing(tracing_enabled)
 

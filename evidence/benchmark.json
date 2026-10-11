@@ -1,0 +1,77 @@
+{
+  "cases": 10,
+  "v1": {
+    "mismatches": 3,
+    "false_violations": 1,
+    "false_holds": 2,
+    "unverifiable": 0
+  },
+  "v2": {
+    "mismatches": 0,
+    "false_violations": 0,
+    "false_holds": 0,
+    "unverifiable": 2
+  },
+  "details": [
+    {
+      "promise_id": "P-014",
+      "expected": "violated",
+      "v1": "violated",
+      "v2": "violated"
+    },
+    {
+      "promise_id": "P-017",
+      "expected": "holds",
+      "v1": "violated",
+      "v2": "holds"
+    },
+    {
+      "promise_id": "P-021",
+      "expected": "violated",
+      "v1": "violated",
+      "v2": "violated"
+    },
+    {
+      "promise_id": "P-031",
+      "expected": "unverifiable",
+      "v1": "holds",
+      "v2": "unverifiable"
+    },
+    {
+      "promise_id": "P-040",
+      "expected": "holds",
+      "v1": "holds",
+      "v2": "holds"
+    },
+    {
+      "promise_id": "P-041",
+      "expected": "holds",
+      "v1": "holds",
+      "v2": "holds"
+    },
+    {
+      "promise_id": "P-042",
+      "expected": "holds",
+      "v1": "holds",
+      "v2": "holds"
+    },
+    {
+      "promise_id": "P-043",
+      "expected": "holds",
+      "v1": "holds",
+      "v2": "holds"
+    },
+    {
+      "promise_id": "P-044",
+      "expected": "holds",
+      "v1": "holds",
+      "v2": "holds"
+    },
+    {
+      "promise_id": "P-050",
+      "expected": "unverifiable",
+      "v1": "holds",
+      "v2": "unverifiable"
+    }
+  ]
+}
