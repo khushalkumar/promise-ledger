@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: promise-ledger
+    runtime: docker
+    plan: free
+    autoDeployTrigger: commit
+    healthCheckPath: /healthz
+    envVars:
+      - key: PROMISE_LEDGER_RUN
+        value: evidence/run_live_audit.json

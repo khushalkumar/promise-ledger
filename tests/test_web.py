@@ -2,6 +2,7 @@ import json
 
 from fastapi.testclient import TestClient
 
+import ledger.web
 from ledger.models import LedgerRun
 from ledger.store import RunStore
 from ledger.web import create_app
@@ -86,3 +87,24 @@ def test_ledger_page_renders_latest_durable_run_without_json_file(tmp_path):
     assert response.status_code == 200
     assert "P-014" in response.text
     assert "run-cloud" in response.text
+
+
+def test_health_endpoint_does_not_load_evidence(tmp_path):
+    missing_evidence = tmp_path / "missing.json"
+
+    response = TestClient(create_app(missing_evidence)).get("/healthz")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_main_uses_render_port_when_promise_ledger_port_is_unset(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setenv("PROMISE_LEDGER_RUN", str(tmp_path / "run.json"))
+    monkeypatch.delenv("PROMISE_LEDGER_PORT", raising=False)
+    monkeypatch.setenv("PORT", "10000")
+    monkeypatch.setattr(ledger.web.uvicorn, "run", lambda *args, **kwargs: calls.append(kwargs))
+
+    ledger.web.main()
+
+    assert calls == [{"host": "127.0.0.1", "port": 10000}]

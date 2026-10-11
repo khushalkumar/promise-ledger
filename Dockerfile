@@ -37,9 +37,7 @@ ENV PATH="/app/.venv/bin:/usr/local/bin:${PATH}" \
     HOME=/home/app \
     PYTHONUNBUFFERED=1 \
     PROMISE_LEDGER_HOST=0.0.0.0 \
-    PROMISE_LEDGER_PORT=8080 \
     PORT=8080
 
 EXPOSE 8080
 CMD ["ledger-ui"]
-

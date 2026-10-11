@@ -29,6 +29,10 @@ def create_app(
     app.mount("/static", StaticFiles(directory=PACKAGE_ROOT / "static"), name="static")
     templates = Jinja2Templates(directory=PACKAGE_ROOT / "templates")
 
+    @app.get("/healthz")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
     @app.get("/", response_class=HTMLResponse)
     def ledger_page(request: Request) -> HTMLResponse:
         evidence, evidence_name = _load_evidence(evidence_path, store)
@@ -99,7 +103,7 @@ def main() -> None:
     else:
         evidence_path = Path(os.getenv("PROMISE_LEDGER_RUN", "evidence/run_live_audit.json"))
     host = os.getenv("PROMISE_LEDGER_HOST", "127.0.0.1")
-    port = int(os.getenv("PROMISE_LEDGER_PORT", "8000"))
+    port = int(os.getenv("PROMISE_LEDGER_PORT") or os.getenv("PORT", "8000"))
     trace_url_template = os.getenv(
         "NEATLOGS_TRACE_URL_TEMPLATE",
         "https://app.neatlogs.com/traces/{trace_id}",
