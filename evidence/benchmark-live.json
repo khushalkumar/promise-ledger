@@ -1,17 +1,29 @@
 {
-  "trace_id": "2940581bcb8fa85fec385f6f9a823f0b",
+  "trace_id": "861bcfead02ad6de99ff5b7a0009bf5f",
   "cases": 10,
   "v1": {
-    "mismatches": 3,
-    "false_violations": 1,
-    "false_holds": 2,
-    "unverifiable": 0
+    "mismatches": 8,
+    "false_violations": 4,
+    "false_holds": 0,
+    "unverifiable": 0,
+    "llm_calls": 10,
+    "prompt_tokens": 16141,
+    "completion_tokens": 4240,
+    "total_tokens": 20381,
+    "latency_ms": 38633.089,
+    "estimated_cost_usd": 0.082753
   },
   "v2": {
     "mismatches": 0,
     "false_violations": 0,
     "false_holds": 0,
-    "unverifiable": 2
+    "unverifiable": 2,
+    "llm_calls": 11,
+    "prompt_tokens": 5286,
+    "completion_tokens": 1322,
+    "total_tokens": 6608,
+    "latency_ms": 25699.512,
+    "estimated_cost_usd": 0.026435
   },
   "details": [
     {
@@ -29,31 +41,31 @@
     {
       "promise_id": "P-021",
       "expected": "violated",
-      "v1": "violated",
+      "v1": "at_risk",
       "v2": "violated"
     },
     {
       "promise_id": "P-031",
       "expected": "unverifiable",
-      "v1": "holds",
+      "v1": "at_risk",
       "v2": "unverifiable"
     },
     {
       "promise_id": "P-040",
       "expected": "holds",
-      "v1": "holds",
+      "v1": "violated",
       "v2": "holds"
     },
     {
       "promise_id": "P-041",
       "expected": "holds",
-      "v1": "holds",
+      "v1": "violated",
       "v2": "holds"
     },
     {
       "promise_id": "P-042",
       "expected": "holds",
-      "v1": "holds",
+      "v1": "at_risk",
       "v2": "holds"
     },
     {
@@ -65,13 +77,13 @@
     {
       "promise_id": "P-044",
       "expected": "holds",
-      "v1": "holds",
+      "v1": "violated",
       "v2": "holds"
     },
     {
       "promise_id": "P-050",
       "expected": "unverifiable",
-      "v1": "holds",
+      "v1": "at_risk",
       "v2": "unverifiable"
     }
   ]

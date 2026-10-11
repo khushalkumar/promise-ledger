@@ -4,10 +4,10 @@ Promise Ledger found two independent root causes for the Northwind DPA section 7
 
 ## Pull requests
 
-1. [Tasklane PR #1](https://github.com/khushalkumar/tasklane-demo/pull/1) - commit `11aa2452f92db94fbf4d0edeec4aaea2fa1fdaeb` adds `audit_events` to the tenant purge transaction and converts the planted defect assertion into a regression test.
-2. [Tasklane PR #2](https://github.com/khushalkumar/tasklane-demo/pull/2) - commit `13470446b2582a4a2a4396d16e850e62d253e60b` reduces backup lifecycle expiry from 90 days to 30 days while leaving the separate residency defect untouched.
+1. [Tasklane PR #3](https://github.com/khushalkumar/tasklane-demo/pull/3) - runtime-created commit `5a153a843f1c5daadaa187f66212fbf081089d94` adds `audit_events` to the tenant purge transaction. Entire checkpoint: `01M4NGGEP8TWQWXQ5VXDV28D7V`.
+2. [Tasklane PR #4](https://github.com/khushalkumar/tasklane-demo/pull/4) - runtime-created commit `7a98105b3d669ae5bc0c574a2ae6539298c17dc6` reduces backup lifecycle expiry from 90 days to 30 days while leaving the separate residency defect untouched. Entire checkpoint: `01M4NGP8171K9MSW1N78X8PB19`.
 
-Both commits are authored by Khushal Kumar using `kkhushal1531@gmail.com`.
+Both are normal, non-draft PRs created by autonomous run `pl-20261011T130117Z-6f374997`. Both commits are authored by Khushal Kumar using `kkhushal1531@gmail.com`; both GitHub Actions checks pass.
 
 ## Combined verification
 

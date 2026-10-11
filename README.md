@@ -15,10 +15,10 @@ One live audit extracts nine promises from three documents and produces:
 - Four MSA promises hold - Business-plan SSO, 99.9% availability credits, encryption at rest, and administrator MFA.
 - `C-003 violated` - the 30-day DPA and 90-day public retention policy conflict.
 
-Two open remediation PRs independently fix the `P-014` root causes. Applying both in an isolated checkout turns `P-014` green without hiding the remaining conditions:
+The autonomous runtime created two open remediation PRs for the independent `P-014` root causes. Applying both in an isolated checkout turns `P-014` green without hiding the remaining conditions:
 
-- [Tasklane PR #1 - purge audit events](https://github.com/khushalkumar/tasklane-demo/pull/1)
-- [Tasklane PR #2 - cap backup retention](https://github.com/khushalkumar/tasklane-demo/pull/2)
+- [Tasklane PR #3 - purge audit events](https://github.com/khushalkumar/tasklane-demo/pull/3)
+- [Tasklane PR #4 - cap backup retention](https://github.com/khushalkumar/tasklane-demo/pull/4)
 
 ## How it works
 
@@ -77,6 +77,32 @@ uv run ledger run \
   --output evidence/run_nine_baseline.json
 ```
 
+Run the complete autonomous audit-to-PR workflow. Supplying the same `--run-id` after an interruption reuses its durable baseline and existing stable PR branches:
+
+```bash
+uv run ledger agent-run \
+  --target ../tasklane-demo \
+  --database ../tasklane-demo/artifacts/tasklane.db \
+  --document contracts/Northwind_DPA_v3.pdf \
+  --document contracts/Acme_MSA_2026.pdf \
+  --document contracts/privacy_policy.md \
+  --registry contracts/id_registry.json \
+  --repository khushalkumar/tasklane-demo \
+  --state-database sqlite:///artifacts/agent-state.db \
+  --worktree-root artifacts/worktrees \
+  --output evidence/run_autonomous.json
+```
+
+Run the independent live compiler benchmark:
+
+```bash
+uv run ledger bench \
+  --run evidence/run_nine_baseline.json \
+  --target ../tasklane-demo \
+  --database ../tasklane-demo/artifacts/tasklane.db \
+  --output evidence/benchmark-live.json
+```
+
 Open the evidence interface:
 
 ```bash
@@ -98,7 +124,8 @@ the required roles; see [the GCP deployment guide](docs/gcp-deployment.md).
 - `evidence/run_entire_graph.json` - traced deterministic run with ranked Entire Graph inventory hits.
 - `evidence/run_nine_baseline.json` - repeatable model-free baseline.
 - `evidence/extraction_drift_split.json` - a recorded model-drift case handled by deterministic deduplication.
-- `evidence/benchmark.json` - deterministic v1 vs. v2 compiler comparison over ten seeded cases.
+- `evidence/benchmark-live.json` - independent live v1 vs. grounded v2 comparison with quality, token, latency, and cost measurements.
+- `evidence/run_autonomous.json` - one real agent run containing grounded causes, runtime-created PRs, and selective re-check results.
 - `evidence/neatlogs.md` - trace IDs, runtime coverage, benchmark evidence, and verification boundary.
 - `evidence/entire.md` - runtime Entire Graph evidence plus the explicit checkpoint-capture boundary.
 - `evidence/run_final.md` - compact judge-facing audit, remediation, improvement, and economics index.

@@ -25,7 +25,7 @@ The main example is `P-014`. `P-014` is an internal promise ID, not a priority o
 
 > Tasklane will delete Northwind's customer personal data within 30 days, including application records, audit events, exports, attachments, and backups.
 
-The original audit marks `P-014` as **violated**. Applying the two proposed fixes in an isolated checkout makes it **hold**.
+The original audit marks `P-014` as **violated**. Applying the two runtime-created PR commits in an isolated checkout makes it **hold**.
 
 ## 3. What is live and what is saved
 
@@ -41,8 +41,8 @@ The live audit normally takes approximately 15–30 seconds. Do not type any cre
 ### Saved supporting evidence
 
 - The previously verified baseline protects us if a live external service is slow.
-- The remediated audit proves the two proposed fixes.
-- The compiler benchmark proves the grounded compiler improved over the naïve version.
+- The remediated audit proves the combined effect of the two runtime-created PR commits.
+- The live compiler benchmark measures accuracy, tokens, latency, and estimated cost without replaying saved predictions.
 - The Entire checkpoint proves AI-assisted work was captured during the hackathon.
 - The cfo.ai workbook and business plan preserve the financial result.
 
@@ -56,11 +56,12 @@ The live audit normally takes approximately 15–30 seconds. Do not type any cre
 | Live result UI | <http://127.0.0.1:8002> | The result created while recording. I will prepare this address to display the new run after it finishes. |
 | Neatlogs trace list | [Promise Ledger traces](https://app.neatlogs.com/traces?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | The newest Promise Ledger run should appear first after refreshing. |
 | Verified Neatlogs fallback | [Trace `279e...c551`](https://app.neatlogs.com/traces/279e6c54faac9ee0a38d05177481c551?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | A 37-span run showing workflow, agents, tools, guardrails, input, and output. Use this if the fresh trace has not appeared yet. |
-| Tasklane fix 1 | [Tasklane PR #1](https://github.com/khushalkumar/tasklane-demo/pull/1) | Adds `audit_events` to the deletion job. |
-| Tasklane fix 2 | [Tasklane PR #2](https://github.com/khushalkumar/tasklane-demo/pull/2) | Changes backup expiry from 90 days to 30 days. |
+| Tasklane fix 1 | [Tasklane PR #3](https://github.com/khushalkumar/tasklane-demo/pull/3) | Runtime-created normal PR adding `audit_events` to the deletion job. Its checks pass. |
+| Tasklane fix 2 | [Tasklane PR #4](https://github.com/khushalkumar/tasklane-demo/pull/4) | Runtime-created normal PR changing backup expiry from 90 days to 30 days. Its checks pass. |
 | Fixed-result UI | <http://127.0.0.1:8001> | The isolated after-fix result. `P-014` is green and says **HOLDS**. |
-| Benchmark trace | [Trace `2940...3f0b`](https://app.neatlogs.com/traces/2940581bcb8fa85fec385f6f9a823f0b?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | Compiler v1 has 3 mismatches; v2 has 0. |
-| Benchmark backup | [`evidence/benchmark.md`](../evidence/benchmark.md) | The same comparison as a simple table. |
+| Autonomous run | [`evidence/run_autonomous.json`](../evidence/run_autonomous.json) | Run `pl-20261011T130117Z-6f374997`: two grounded causes, PRs #3/#4, and combined selective re-check. |
+| Benchmark trace | [Trace `861b...bf5f`](https://app.neatlogs.com/traces/861bcfead02ad6de99ff5b7a0009bf5f?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | Free-form v1 misses 8/10; grounded v2 gets 10/10 with 68% lower estimated model cost. |
+| Benchmark backup | [`evidence/benchmark.md`](../evidence/benchmark.md) | The independent compiler comparison, including tokens, cost, latency, and repair-call data. |
 | Entire evidence | [`evidence/entire.md`](../evidence/entire.md) | Entire Graph finds `purge_expired_tenants` in `tasklane/jobs/purge_tenant.py`; the checkpoint ID is also recorded. |
 | cfo.ai model | [Promise Ledger scenario page](https://app.cfo.ai/outgoing-sheep-2dce4103/chat/ff58a708-efba-45ab-adce-dcf04fd52383?pageId=e21c5cbf-b709-43da-a9cd-9c7be1769de2&panel=page&scenario=9e525b60-f4d7-4c9f-aef4-6101c66d1453) | Downside, Base, and Growth financial scenarios. |
 | cfo.ai backup image | [`evidence/cfo_scenario_model.png`](../evidence/cfo_scenario_model.png) | Static scenario table if the live page is slow. |
@@ -96,8 +97,8 @@ I will prepare these tabs in order:
 4. Baseline audit UI (`8000`) as a fallback.
 5. Neatlogs trace list and verified trace.
 6. Entire evidence.
-7. Tasklane PR #1.
-8. Tasklane PR #2.
+7. Tasklane PR #3.
+8. Tasklane PR #4.
 9. Fixed-result UI (`8001`).
 10. cfo.ai scenario model and backup image.
 11. Business-plan PDF.
@@ -174,18 +175,18 @@ This explicitly covers neatlogs architecture, implementation, runtime, reasoning
 
 ### Scene 5 — Fix and verify — 1:50 to 2:25
 
-**Open in sequence:** Tasklane PR #1, PR #2, then fixed-result UI `8001`.
+**Open in sequence:** Tasklane PR #3, PR #4, then fixed-result UI `8001`.
 
 **Action:**
 
-1. On PR #1, show the title and `audit_events` added to deletion.
-2. On PR #2, show backup expiry changing from 90 to 30.
+1. On PR #3, show the title, green checks, runtime run ID, and `audit_events` added to deletion.
+2. On PR #4, show the title, green checks, runtime run ID, and backup expiry changing from 90 to 30.
 3. On `8001`, show green `P-014` and its passing checks.
 4. Briefly show that `P-021` remains red and `P-031` remains unverifiable.
 
 **Say:**
 
-> The agent's findings become two small reviewable pull requests. One fixes tenant deletion; the other caps backup expiry. Applying both in an isolated checkout turns only P-014 green. Residency and missing subprocessor evidence remain unresolved, proving the re-check did not hide unrelated failures.
+> The autonomous run created these two normal, reviewable pull requests—one for tenant deletion and one for backup expiry. Both have passing checks and AI-change checkpoints. The agent then combined their exact commits in an isolated checkout and selectively rechecked the affected evidence. P-014 turns green, while residency and missing subprocessor evidence remain unresolved.
 
 ### Scene 6 — cfo.ai and conclusion — 2:25 to 3:00
 

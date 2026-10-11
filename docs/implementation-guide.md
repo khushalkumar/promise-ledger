@@ -2,163 +2,239 @@
 
 ## 1. Mental model
 
-Promise Ledger converts clauses from contracts and policies into structured `Promise` objects, assigns stable IDs such as `P-014`, compiles each promise into deterministic checks, executes those checks against Tasklane code/data/configuration, and produces a `LedgerRun`. The web UI does not run an audit; it renders a saved `LedgerRun` JSON file.
+Promise Ledger turns contract text into typed `Promise` records, maps them to safe probe templates, executes read-only checks against Tasklane, and calculates deterministic verdicts. `ledger agent-run` extends that audit into an autonomous recovery loop: investigate grounded failures, create one isolated coding-agent change per root cause, open real GitHub pull requests, combine their commits in a clean worktree, and re-run only affected probes.
+
+The model interprets documents, selects validated checks, explains root causes, and writes narrow fixes. Inventory, probe execution, retry/fallback behavior, verdicts, state transitions, Git isolation, and selective re-checking are deterministic.
 
 ## 2. Architecture
 
 ```mermaid
 flowchart LR
-    D[Contract and policy documents] --> E[extract_promises]
-    E --> R[assign_canonical_ids]
-    R --> O[run_ledger]
-    T[Tasklane repository and SQLite database] --> O
-    O --> J[LedgerRun JSON]
-    J --> W[FastAPI read-only evidence UI]
-    O --> N[Neatlogs trace]
+    D[PDF and Markdown documents] --> X[Extractor agent]
+    X --> R[Canonical ID registry]
+    R --> C[Grounded compiler agent]
+    T[Tasklane code, DB, config] --> I[System inventory]
+    I --> C
+    C --> P[Bounded deterministic probes]
+    P --> V[Verdict engine]
+    V --> S[(RunStore)]
+    V --> N[Neatlogs traces]
+    V --> G[Entire-backed investigator]
+    G --> A[Codex coding agents]
+    A --> H[GitHub PRs]
+    H --> Q[Combined selective re-check]
+    Q --> S
+    S --> W[FastAPI evidence UI]
 ```
+
+Production runs the Tasklane API and evidence UI as Cloud Run services, the autonomous loop as a Cloud Run Job, and state/data in Cloud SQL PostgreSQL. Secret Manager supplies credentials; Cloud Scheduler starts the job.
 
 ## 3. Entry points
 
 | Entry point | File and symbol | Purpose |
 | --- | --- | --- |
-| Full live audit | `ledger/cli.py` — `audit_command()` | Extract promises from documents, assign canonical IDs, run checks, and save evidence JSON. |
-| Deterministic run | `ledger/cli.py` — `run_command()` | Run already extracted promises without another model extraction call. |
-| Benchmark | `ledger/cli.py` — `bench_command()` | Compare naive v1 verdict semantics with grounded v2 semantics. |
-| Evidence UI | `ledger/web.py` — `main()` and `create_app()` | Load a saved JSON artifact and render the ledger page. |
+| Full autonomous run | `ledger/cli.py` — `agent_run_command()` | Extract, audit, investigate, open real PRs, re-check, and persist the result. A supplied `--run-id` resumes from a saved baseline. |
+| Audit only | `ledger/cli.py` — `audit_command()` | Extract, compile, execute, and save a `LedgerRun`. |
+| Deterministic verification | `ledger/cli.py` — `run_command()` | Execute already-extracted promises without extraction calls. |
+| Live compiler benchmark | `ledger/cli.py` — `bench_command()` | Run independent LLM v1 and grounded v2 paths and measure quality, tokens, latency, and estimated cost. |
+| Evidence service | `ledger/web.py` — `main()` / `create_app()` | Render the latest durable final run or a configured JSON artifact. |
+| Cloud autonomous job | `scripts/cloud-agent-run.sh` | Clone Tasklane, seed PostgreSQL, and invoke `ledger agent-run`. |
+| GCP deployment | `scripts/deploy-gcp.sh` | Build, deploy, configure services/job/scheduler, and start the first job. |
 
-## 4. End-to-end audit flow
+## 4. End-to-end flows
 
-### Flow: document to evidence ledger
+### Flow: autonomous contract-to-PR run
 
-**Trigger:** `ledger audit` from the CLI.
+**Trigger:** `ledger agent-run` locally or the `promise-ledger-agent` Cloud Run Job.
 
-**Entry point:** `ledger/cli.py` — `audit_command()`.
+**Entry point:** `ledger/cli.py` — `agent_run_command()`
 
-1. `ledger/documents.py` — `load_document()` loads PDF or Markdown content.
-2. `ledger/agents/extractor.py` — `extract_promises()` sends each document through the configured JSON LLM backend and validates structured promises.
-3. `ledger/registry.py` — `assign_canonical_ids()` maps extracted promises to stable IDs such as `P-014`.
-4. `ledger/orchestrator.py` — `run_ledger()` opens the single Neatlogs `ledger_run` workflow root and delegates to `_run_ledger()`.
-5. `ledger/inventory.py` — `build_inventory()` inventories the target. `ledger/entire_graph.py` — `search_entire_graph()` optionally augments that inventory with ranked Entire Graph hits.
-6. `ledger/agents/compiler.py` — `compile_checks()` maps supported promise kinds to fixed probe templates.
-7. `ledger/probes/runner.py` — `run_probe()` runs a primary probe and runs its declared fallback only when the primary outcome is `error`.
-8. `ledger/probes/executors.py` — `execute_probe()` dispatches to SQLite, source-AST, Terraform, JSON, or simulated cloud checks.
-9. `ledger/verdict.py` — `evaluate_verdict()` calculates `holds`, `violated`, or `unverifiable` from effective results.
-10. `ledger/conflicts.py` — `detect_conflicts()` detects incompatible promises across documents.
-11. `audit_command()` serializes the final `LedgerRun` to the requested evidence file.
+#### Step 1 — resolve or resume durable state
 
-**Final outcome:** a reproducible JSON artifact plus a flushed Neatlogs workflow trace.
+`agent_run_command()` opens `RunStore`, creates a stable run ID when one is not supplied, validates that an existing ID belongs to the requested repository, and loads the saved baseline when present. A resumed run skips extraction and baseline audit. `RunStore` supports SQLite and PostgreSQL via SQLModel.
 
-## 5. Saved evidence to UI flow
+#### Step 2 — extract and identify promises
 
-**Trigger:** `PROMISE_LEDGER_RUN=<path> uv run ledger-ui`.
+`ledger/documents.py` — `load_document()` reads PDF or Markdown. `ledger/agents/extractor.py` — `extract_promises()` calls `AzureJsonBackend.complete_json()` and validates structured output. `ledger/registry.py` — `assign_canonical_ids()` maps clauses to stable IDs such as `P-014`.
 
-**Entry point:** `ledger/web.py` — `main()`.
+#### Step 3 — inventory, compile, and execute
 
-`main()` reads `PROMISE_LEDGER_RUN`, creates the FastAPI app, and starts Uvicorn. On `GET /`, `ledger_page()` reads the JSON artifact, calculates the effective result for each probe, counts verdicts and conflicts, and renders `ledger/templates/ledger.html`. Styling lives in `ledger/static/ledger.css`.
+`ledger/orchestrator.py` — `run_ledger()` opens the Neatlogs workflow root. `ledger/inventory.py` — `build_inventory()` inspects database tables, Python sources, Terraform, JSON configuration, and optional Entire Graph hits. `ledger/agents/compiler_agent.py` — `compile_checks_with_agent()` asks the model to select every deterministic candidate from `compile_checks()`; it repairs one incomplete selection and rejects a second.
 
-The current demo uses:
+`ledger/probes/runner.py` — `run_probe()` gives every attempt a 30-second timeout and retries once. An exhausted `error` activates only the declared fallback; a `fail` never does. `ledger/probes/executors.py` — `execute_probe()` performs SQL, AST, Terraform, JSON, or cloud-stub checks. Its SHA-256 material includes the probe definition, result, and source/config bytes when applicable.
 
-| URL | Saved evidence | Meaning |
-| --- | --- | --- |
-| `http://127.0.0.1:8000` | `evidence/run_live_audit.json` | Original audit; `P-014` is violated. |
-| `http://127.0.0.1:8001` | `evidence/run_remediated.json` | Isolated after-fix verification; `P-014` holds. |
+`ledger/verdict.py` — `evaluate_verdict()` calculates the result from effective probe outcomes. `ledger/conflicts.py` — `detect_conflicts()` adds cross-document contradictions.
 
-## 6. Data flow
+#### Step 4 — investigate safe violations
+
+`ledger/workflow.py` — `AutonomousWorkflow.remediate()` auto-remediates only `PromiseKind.DELETION_DEADLINE`. It stores the baseline and probe dependency index, then passes violated reports to `EvidenceInvestigator`.
+
+`ledger/agents/investigator.py` — `EvidenceInvestigator.investigate()` runs `entire graph search`, `entire graph impact`, and `git log -L`. The LLM returns typed `RootCause` records. Paths and probe IDs are validated and multiple explanations for the same file are merged into one stable cause.
+
+#### Step 5 — create real changes and PRs
+
+`ledger/agents/remediator.py` — `RemediationAgent.remediate()` derives a stable branch per root cause and first asks `GhPullRequests.find_open()` for an existing PR. This makes resumed runs idempotent at the external-write boundary.
+
+If none exists, `GitWorkspace.prepare()` creates an isolated worktree. `CodexCodingAgent.implement()` runs headless Codex with a strict output schema and a 15-minute timeout. `GitWorkspace.commit_and_push()` rejects secret-like files and commits as `Khushal Kumar <kkhushal1531@gmail.com>`. `GhPullRequests.ensure_open()` opens a normal, non-draft PR.
+
+#### Step 6 — verify the combined effect
+
+`ConfiguredRechecker.recheck()` creates a clean detached worktree from `origin/main`, cherry-picks every remediation commit, loads `.promise-ledger.json`, runs the target tests, seeds an isolated database, applies declared effect commands, and invokes `recheck_ledger()` only for probes affected by changed dependencies. It always removes the temporary worktree.
+
+#### Final outcome
+
+`AutonomousWorkflow` stores the final `LedgerRun`, records `completed`, and returns `AutonomousRunResult` containing baseline evidence, root causes, PR references, and rechecked verdicts. On failure it records the exception and `failed` stage before re-raising.
+
+### Flow: evidence UI
+
+`ledger/web.py` — `main()` uses `PROMISE_LEDGER_STATE_DATABASE` when present; otherwise it reads `PROMISE_LEDGER_RUN`. `GET /` selects each probe's effective primary/fallback result and renders `ledger/templates/ledger.html`. Valid trace IDs become safe `https://app.neatlogs.com/traces/{trace_id}` links. `GET /api/runs/latest` returns the same durable result as JSON.
+
+### Flow: live v1/v2 benchmark
+
+`ledger/benchmark.py` — `compare_compilers()` asks v1 to independently generate a probe plan from the promise, inventory, and supported template signatures. It validates and canonicalizes that plan before execution. V2 independently selects deterministic asset-grounded candidates. Both plans use the same probe runner and verdict engine; saved verdicts are used only as expected labels, never as predictions. The result records mismatch categories, model calls, token usage, wall-clock latency, estimated cost, and the active Neatlogs trace ID.
+
+## 5. Data flow
 
 ```text
-Document text
-  -> extracted Promise objects
-  -> canonical Promise IDs
-  -> compiled Probe objects
-  -> primary/fallback ProbeResult objects
-  -> PromiseReport verdicts
-  -> LedgerRun JSON
-  -> read-only HTML evidence cards
+Document bytes -> Promise -> canonical ID -> AssetMap -> Probe -> ProbeExecution
+-> ProbeResult (hash + trace) -> PromiseReport -> LedgerRun
+-> RootCause -> AgentChange -> PullRequestRef -> selective LedgerRun
+-> RunStore / JSON -> HTML and API
 ```
 
-The durable state is the saved evidence JSON. Neatlogs stores observability traces. The UI has no database and performs no mutation.
+The target database URL is used only by SQLAlchemy. Evidence material never includes database credentials. GitHub, model, and tracing secrets remain environment/Secret Manager values.
 
-## 7. Files and responsibilities
+## 6. Files and responsibilities
 
 | File | Important symbol | Responsibility | Called by | Calls / depends on |
 | --- | --- | --- | --- | --- |
-| `ledger/cli.py` | `audit_command()` | Full audit orchestration and serialization | CLI | documents, extractor, registry, orchestrator |
-| `ledger/orchestrator.py` | `run_ledger()` | Single traced workflow root | CLI | inventory, compiler, probes, verdicts, conflicts |
-| `ledger/agents/compiler.py` | `compile_checks()` | Promise-to-probe mapping | orchestrator | models and asset inventory |
-| `ledger/probes/runner.py` | `run_probe()` | Error capture and fallback execution | orchestrator | probe executor, trace ID capture |
-| `ledger/probes/executors.py` | `execute_probe()` | Deterministic check execution | probe runner | SQLite, AST, Terraform, JSON |
-| `ledger/verdict.py` | `evaluate_verdict()` | Final verdict semantics | orchestrator | effective probe outcomes |
-| `ledger/conflicts.py` | `detect_conflicts()` | Cross-document conflict detection | orchestrator | promises |
-| `ledger/web.py` | `create_app()` | Saved-artifact web view | `ledger-ui` | Jinja template and CSS |
-| `ledger/templates/ledger.html` | ledger template | Audit cards and evidence chains | FastAPI/Jinja | rendered context |
+| `ledger/cli.py` | `agent_run_command()` | User-facing orchestration and resume | CLI / cloud job | extraction, compiler, workflow, store |
+| `ledger/workflow.py` | `AutonomousWorkflow` | Durable remediation state machine | CLI | investigator, remediator, rechecker |
+| `ledger/store.py` | `RunStore` | Runs, stages, dependency index, baseline/final ledgers | workflow, UI | SQLModel / SQLite / PostgreSQL |
+| `ledger/orchestrator.py` | `run_ledger()`, `recheck_ledger()` | Audit and selective verification | CLI, rechecker | inventory, compiler, runner, verdict |
+| `ledger/agents/compiler_agent.py` | `compile_checks_with_agent()` | Validated model selection of safe candidates | orchestrator callers | fixed compiler, JSON backend |
+| `ledger/probes/runner.py` | `run_probe()` | Timeout, retry, error/fallback, hashing handoff | orchestrator | executor, tracing |
+| `ledger/probes/executors.py` | `execute_probe()` | Read-only SQL/AST/HCL/JSON checks | runner | SQLAlchemy, `python-hcl2` |
+| `ledger/agents/investigator.py` | `EvidenceInvestigator` | Grounded root-cause evidence | workflow | Entire, git, model |
+| `ledger/agents/remediator.py` | `RemediationAgent` | Stable branch and idempotent PR flow | workflow | coding agent, worktree, GitHub |
+| `ledger/integrations/recheck.py` | `ConfiguredRechecker` | Combined clean-worktree verification | workflow | target config, git, orchestrator |
+| `ledger/benchmark.py` | `compare_compilers()` | Independent measured comparison | CLI | two JSON backends, orchestrator |
+| `ledger/web.py` | `create_app()` | Durable/read-only web and JSON API | `ledger-ui` | store, Jinja |
+| `infra/gcp/main.tf` | Terraform resources | GCP runtime, data, IAM, budget | deployment owner | Google APIs |
 
-## 8. State, side effects, and external systems
+## 7. Call graphs
 
-- The LLM backend is called only during document extraction.
-- SQLite checks are read-only during an audit.
-- Source, Terraform, and JSON probes read files under the target root; `_target_path()` prevents path escape.
-- Evidence JSON is written by CLI commands.
-- Neatlogs receives workflow/span telemetry when `NEATLOGS_API_KEY` is available.
-- Entire Graph is invoked read-only with a ten-second timeout. Failure returns no graph hits and does not stop ordinary inventory.
-- The web UI reads its configured evidence file on each page request and does not change it.
+```text
+agent_run_command
+  -> RunStore.ledger_result
+  -> _extract_documents -> extract_promises
+  -> run_ledger -> build_inventory -> compile_checks_with_agent -> run_probe
+  -> AutonomousWorkflow.remediate
+       -> EvidenceInvestigator.investigate
+       -> RemediationAgent.remediate
+            -> GitWorkspace.prepare
+            -> CodexCodingAgent.implement
+            -> GitWorkspace.commit_and_push
+            -> GhPullRequests.ensure_open
+       -> ConfiguredRechecker.recheck -> recheck_ledger
+  -> RunStore.save_ledger_result
+```
 
-## 9. Error and fallback behavior
+## 8. State, persistence, and side effects
 
-`run_probe()` catches executor exceptions and records them as `error`. It runs a fallback only when the primary result is `error` and the probe declares a fallback. `P-017` demonstrates this: a simulated cloud `AccessDenied` becomes an error, then the Terraform fallback passes, so the promise holds.
+- `RunStore` owns durable run rows, append-only stage events, probe dependencies, and baseline/final ledger payloads.
+- Model calls occur during extraction, grounded compilation, investigation, and benchmark execution.
+- Probes are read-only. The remediation path creates worktrees, commits, branches, pushes, and GitHub PRs.
+- `RemediationAgent` checks for a stable open branch before writing, preventing duplicate PRs on resume.
+- Neatlogs receives spans only when `NEATLOGS_API_KEY` initializes the SDK.
+- The UI reads state and does not mutate the ledger.
 
-A promise with no grounded probes becomes `unverifiable`; it is not assumed to pass. Unsupported probe templates raise an error that is recorded by the runner. Entire Graph failure degrades to ordinary filesystem/configuration inventory.
+## 9. External systems and integrations
 
-## 10. Configuration
+| Boundary | Sent | Received | Failure behavior |
+| --- | --- | --- | --- |
+| Azure-compatible JSON LLM | prompts and schemas | validated JSON | validation/SDK errors fail the stage; compiler gets one repair attempt |
+| Neatlogs | workflow, agent, tool, guardrail spans | trace IDs | disabled when no key; audit still runs |
+| Entire CLI | repository query/symbol | ranked graph JSON | inventory degrades to filesystem; investigation requires evidence and fails closed |
+| Codex CLI | narrow fix prompt + schema | changed files, tests, session ID | nonzero exit/timeout fails remediation |
+| Git/GitHub CLI | branches, commits, PR metadata | SHA and PR reference | subprocess error fails and is persisted |
+| SQL database | read-only compliance queries | counts/schema | runner retries, then records `error` and eligible fallback |
+| GCP | images, services, job, secrets, schedule | deployed endpoints/executions | deploy script exits on first failed command |
+
+## 10. Validation, errors, and edge cases
+
+- Pydantic validates every agent output and domain record.
+- Probe file paths cannot escape the target repository; SQL table identifiers use a strict identifier regex.
+- Probe calls time out after 30 seconds and receive two attempts. Only exhausted errors activate fallback evidence.
+- Missing grounded checks produce `unverifiable`, never `holds`.
+- Auto-remediation is restricted to deletion deadlines; residency migrations and missing authority remain human decisions.
+- Root causes must reference failed probe IDs and grounded repository files.
+- Coding-agent output forbids extra fields and unsafe changed paths; commit logic blocks common secret-file extensions.
+- A resumed run ID cannot be reused for another repository.
+
+## 11. Configuration and environment
 
 | Setting | Purpose |
 | --- | --- |
-| `PROMISE_LEDGER_RUN` | Saved evidence file displayed by the UI. Defaults to `evidence/run_live_audit.json`. |
-| `PROMISE_LEDGER_HOST` | UI bind host. Defaults to `127.0.0.1`. |
-| `PROMISE_LEDGER_PORT` | UI port. Defaults to `8000`. |
-| `NEATLOGS_API_KEY` | Enables Neatlogs capture. |
+| `PROMISE_LEDGER_AZURE_ENDPOINT`, `PROMISE_LEDGER_AZURE_API_KEY`, `PROMISE_LEDGER_AZURE_DEPLOYMENT`, `PROMISE_LEDGER_AZURE_API_VERSION` | JSON model backend |
+| `NEATLOGS_API_KEY` | Runtime tracing |
+| `OPENAI_API_KEY`, `CODEX_BINARY` | Coding-agent authentication and executable |
+| `PROMISE_LEDGER_STATE_DATABASE` | Durable SQLite/PostgreSQL state and UI source |
+| `PROMISE_LEDGER_RUN` | JSON UI source when no durable DB is configured |
+| `NEATLOGS_TRACE_URL_TEMPLATE` | UI trace-link pattern; must contain `{trace_id}` |
+| `TARGET_DATABASE_URL`, `TARGET_REPOSITORY`, `GH_TOKEN` | Cloud job target and GitHub access |
 
-LLM provider configuration is loaded by `ledger/llm.py` — `AzureJsonBackend.from_env()`. Secret values are intentionally not documented.
+See `docs/gcp-deployment.md` for GCP IAM and secret setup. No secret value belongs in source control.
 
-## 11. Implementation decisions
+## 12. Architecture and implementation decisions
 
-- Stable promise IDs allow the same obligation to be compared across extraction runs and remediations.
-- Fixed probe templates constrain agent behavior and keep checks reproducible.
-- `unverifiable` is a first-class verdict so missing evidence cannot become false confidence.
-- Fallbacks are declared on probes and are used only for tool errors.
-- The UI renders saved artifacts, separating demonstration and review from network-dependent execution.
-- One explicit Neatlogs workflow root keeps all audit spans on the same trace.
+- Fixed probe templates keep executable behavior reviewable even when model interpretation changes.
+- Independent primary/fallback evidence prevents an authorization error from becoming a false compliance violation.
+- Stable promise, root-cause, and branch IDs make results comparable and external writes idempotent.
+- One PR per root-cause file keeps reviews narrow; the clean combined re-check tests their interaction.
+- Durable event/state rows make failures inspectable and let a supplied run ID skip completed extraction/audit work.
+- Cloud Run Jobs fit finite autonomous executions; Cloud Run services fit the API/UI; Cloud SQL provides shared production state.
 
-## 12. How to modify the implementation
+## 13. Relevant implementation history
+
+The initial proof rendered saved JSON and used manually prepared remediation PRs. The current implementation adds a real autonomous `agent-run`, Entire-grounded investigation, headless Codex changes, real normal PR creation, selective combined re-checking, durable PostgreSQL state, live trace links, resumable run IDs, bounded probes, and GCP deployment automation. The saved deterministic benchmark was replaced by independent live LLM paths because its old mismatch claim did not represent actual model execution.
+
+## 14. How to modify the implementation
 
 | If I want to change... | Start here | Then inspect... | Main risk |
 | --- | --- | --- | --- |
-| Promise extraction | `ledger/agents/extractor.py` | `ledger/llm.py`, `ledger/models.py` | Changing structured output or token use |
-| Promise-to-check rules | `ledger/agents/compiler.py` | `ledger/inventory.py`, executor templates | Producing unsupported or ungrounded checks |
-| A deterministic check | `ledger/probes/executors.py` | `ledger/probes/runner.py`, related tests | Unsafe paths, SQL identifiers, or wrong pass/fail semantics |
-| Verdict rules | `ledger/verdict.py` | `ledger/benchmark.py` | Reintroducing false holds/violations |
-| Fallback behavior | `ledger/probes/runner.py` | probe definitions and tracing tests | Hiding real failures or executing fallback too broadly |
-| Evidence page | `ledger/templates/ledger.html` | `ledger/web.py`, `ledger/static/ledger.css` | Presenting primary errors instead of effective fallback results |
+| Extraction | `ledger/agents/extractor.py` | `models.py`, `registry.py` | ID drift or invalid schemas |
+| Probe candidates | `ledger/agents/compiler.py` | inventory, executors, compiler-agent tests | unsafe or ungrounded execution |
+| Retry/fallback | `ledger/probes/runner.py` | verdict tests and probe declarations | hiding failures or duplicate load |
+| Evidence hashing | `ledger/probes/executors.py` — `_evidence_material()` | runner and storage | leaking secrets or unstable hashes |
+| Auto-remediation policy | `ledger/workflow.py` — `SAFE_AUTO_REMEDIATION_KINDS` | investigator and rechecker | autonomous high-risk changes |
+| Coding agent | `ledger/integrations/codex.py` | remediator, workspace | unsafe scope or unvalidated output |
+| PR behavior | `ledger/integrations/github.py` | remediator branch naming | duplicates or wrong repository |
+| Durable schema | `ledger/store.py` | workflow and web | migration/backward compatibility |
+| GCP topology | `infra/gcp/main.tf` | deploy scripts, Dockerfile | IAM, cost, and service connectivity |
+| UI evidence | `ledger/web.py` and template | store and result models | showing stale/primary rather than effective evidence |
 
-## 13. Key files to understand first
+## 15. Key files to understand first
 
 | Order | File / symbol | Why read this first |
 | ---: | --- | --- |
-| 1 | `ledger/cli.py` — `audit_command()` | Full user-facing entry point. |
-| 2 | `ledger/orchestrator.py` — `run_ledger()` | Central execution path. |
-| 3 | `ledger/agents/compiler.py` — `compile_checks()` | Converts contractual meaning into checks. |
-| 4 | `ledger/probes/runner.py` and `executors.py` | Executes evidence checks and fallbacks. |
-| 5 | `ledger/web.py` and `ledger/templates/ledger.html` | Explains what the demo UI displays. |
+| 1 | `ledger/cli.py` — `agent_run_command()` | Full user-facing entry and resume logic |
+| 2 | `ledger/workflow.py` — `AutonomousWorkflow` | State transitions and safety boundary |
+| 3 | `ledger/orchestrator.py` | Audit and selective re-check |
+| 4 | `ledger/probes/runner.py` / `executors.py` | Trusted evidence execution |
+| 5 | `ledger/agents/investigator.py` / `remediator.py` | Agent-to-change path |
+| 6 | `ledger/integrations/*` | Git, GitHub, Codex, and re-check boundaries |
+| 7 | `ledger/store.py` / `web.py` | Persistence and consumption |
 
-## 14. Quick reference
+## 16. Quick reference
 
-- Original saved audit: `evidence/run_live_audit.json`
-- Remediated saved audit: `evidence/run_remediated.json`
-- Benchmark: `evidence/benchmark.json`
-- Human-readable final result: `evidence/run_final.md`
-- Demo operator instructions: `docs/demo-recording-guide.md`
+- Autonomous evidence: `evidence/run_autonomous.json`
+- Real benchmark: `evidence/benchmark-live.json`
+- Production deployment: `docs/gcp-deployment.md`
+- Demo operation: `docs/demo-recording-guide.md`
+- Runtime-created remediation PRs: Tasklane PRs #3 and #4
 - Contract behind `P-014`: `contracts/Northwind_DPA_v3.pdf`, section 7.2
-- Tasklane PRs: `khushalkumar/tasklane-demo` PRs 1 and 2
 
-## 15. Complete execution walkthrough
+## 17. Complete execution walkthrough
 
-For a full audit, `audit_command()` loads three documents and calls the LLM once per document. The registry turns equivalent extracted clauses into the nine canonical IDs. `run_ledger()` starts the workflow trace, builds a target inventory, asks the compiler for grounded probes, and executes each probe. `P-014` reads purge source code, queries terminated-tenant rows in SQLite, and checks Terraform retention. `P-017` records a cloud permission error and uses its Terraform fallback. The verdict engine builds nine reports, conflict detection adds `C-003`, and the run is serialized. The UI later reads that file and displays the source clause, effective evidence, and verdict without rerunning any audit logic.
+The cloud job clones Tasklane, seeds its database, and starts `agent-run`. The CLI either loads a durable baseline for the requested run ID or extracts three documents, applies stable IDs, inventories Tasklane, asks the grounded compiler to validate its safe candidates, and executes bounded read-only probes. The verdict engine stores the baseline. For safe deletion violations, Entire and git evidence constrain the investigator; stable root causes drive isolated Codex worktrees. Each change is tested, committed with the configured Git identity, pushed, and opened as a normal GitHub PR. A clean worktree combines all commit SHAs, runs the target's own verification recipe, and rechecks only affected probes. The final ledger is stored in PostgreSQL/SQLite, linked to Neatlogs traces, returned as JSON, and served by the UI and `/api/runs/latest`.
