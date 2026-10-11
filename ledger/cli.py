@@ -11,6 +11,7 @@ from ledger.llm import AzureJsonBackend
 from ledger.models import Promise
 from ledger.orchestrator import run_ledger
 from ledger.probes.executors import ProbeContext
+from ledger.registry import assign_canonical_ids, load_registry
 from ledger.tracing import finish_tracing, initialize_tracing
 
 app = typer.Typer(no_args_is_help=True)
@@ -19,6 +20,19 @@ app = typer.Typer(no_args_is_help=True)
 @app.callback()
 def main() -> None:
     """Check contractual promises against a target system."""
+
+
+def _extract_documents(document: list[Path], backend: AzureJsonBackend) -> list[Promise]:
+    promises: list[Promise] = []
+    for path in document:
+        promises.extend(
+            extract_promises(
+                load_document(path),
+                backend,
+                starting_index=len(promises) + 1,
+            )
+        )
+    return promises
 
 
 @app.command("extract")
@@ -32,20 +46,39 @@ def extract_command(
     tracing_enabled = initialize_tracing(os.getenv("NEATLOGS_API_KEY"))
     try:
         backend = AzureJsonBackend.from_env()
-        promises: list[Promise] = []
-        for path in document:
-            promises.extend(
-                extract_promises(
-                    load_document(path),
-                    backend,
-                    starting_index=len(promises) + 1,
-                )
-            )
+        promises = _extract_documents(document, backend)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(
             json.dumps([item.model_dump(mode="json") for item in promises], indent=2) + "\n"
         )
         typer.echo(f"Extracted {len(promises)} promises to {output}")
+    finally:
+        finish_tracing(tracing_enabled)
+
+
+@app.command("audit")
+def audit_command(
+    target: Annotated[Path, typer.Option(exists=True, file_okay=False)],
+    database: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
+    document: Annotated[
+        list[Path],
+        typer.Option(exists=True, dir_okay=False, help="Contract or policy to audit"),
+    ],
+    registry: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
+    output: Annotated[Path, typer.Option(dir_okay=False)],
+) -> None:
+    tracing_enabled = initialize_tracing(os.getenv("NEATLOGS_API_KEY"))
+    try:
+        backend = AzureJsonBackend.from_env()
+        extracted = _extract_documents(document, backend)
+        promises = assign_canonical_ids(extracted, load_registry(registry))
+        ledger_run = run_ledger(promises, ProbeContext(target_root=target, database=database))
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(ledger_run.model_dump_json(indent=2) + "\n")
+        for report in ledger_run.reports:
+            typer.echo(f"{report.promise.id}  {report.verdict}")
+        for conflict in ledger_run.conflicts:
+            typer.echo(f"{conflict.id}  {conflict.verdict}  {conflict.detail}")
     finally:
         finish_tracing(tracing_enabled)
 

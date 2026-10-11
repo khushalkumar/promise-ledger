@@ -1,0 +1,11 @@
+{
+  "Northwind_DPA_v3.pdf|7.2|deletion_deadline": "P-014",
+  "Northwind_DPA_v3.pdf|7.2|retention_limit": "P-017",
+  "Northwind_DPA_v3.pdf|9.1|data_residency": "P-021",
+  "Northwind_DPA_v3.pdf|11.3|notice_period": "P-031",
+  "Acme_MSA_2026.pdf|4.1|feature_entitlement": "P-040",
+  "Acme_MSA_2026.pdf|6.2|availability_slo": "P-041",
+  "Acme_MSA_2026.pdf|8.1|encryption_at_rest": "P-042",
+  "Acme_MSA_2026.pdf|8.1|admin_mfa": "P-043",
+  "privacy_policy.md|5|retention_limit": "P-044"
+}

@@ -124,3 +124,65 @@ def test_extract_command_loads_multiple_documents_and_writes_promises(tmp_path, 
     promises = json.loads(output.read_text())
     assert [item["id"] for item in promises] == ["P-001", "P-002"]
     assert [item["source"]["document"] for item in promises] == ["first.md", "second.md"]
+
+
+def test_audit_command_extracts_assigns_and_verifies_in_one_run(tmp_path, monkeypatch):
+    context = demo_context(tmp_path / "target")
+    document = tmp_path / "Northwind_DPA_v3.md"
+    document.write_text("## 7.2\nDelete customer personal data within 30 days.\n")
+    registry = tmp_path / "registry.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "Northwind_DPA_v3.md|7.2|deletion_deadline": "P-014",
+            }
+        )
+    )
+
+    class StubBackend:
+        def complete_json(self, system: str, user: str) -> str:
+            return json.dumps(
+                {
+                    "promises": [
+                        {
+                            "kind": "deletion_deadline",
+                            "actor": "Tasklane",
+                            "object": "customer personal data",
+                            "includes": ["backups"],
+                            "trigger": "contract.terminated",
+                            "deadline_days": 30,
+                            "clause": "7.2",
+                            "text": "Delete customer personal data within 30 days.",
+                        }
+                    ]
+                }
+            )
+
+    monkeypatch.setattr(
+        AzureJsonBackend,
+        "from_env",
+        classmethod(lambda cls: StubBackend()),
+    )
+    output = tmp_path / "audit.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "audit",
+            "--target",
+            str(context.target_root),
+            "--database",
+            str(context.database),
+            "--document",
+            str(document),
+            "--registry",
+            str(registry),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "P-014  violated" in result.output
+    audit = json.loads(output.read_text())
+    assert audit["reports"][0]["promise"]["id"] == "P-014"
