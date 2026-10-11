@@ -60,6 +60,28 @@ def test_rechecker_fetches_each_pr_commit_before_cherry_pick(tmp_path):
     assert commands == [["git", "fetch", "origin", commit_sha]]
 
 
+def test_rechecker_unshallows_repository_before_merging_pr_heads(tmp_path):
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        stdout = "true\n" if command == ["git", "rev-parse", "--is-shallow-repository"] else ""
+        return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
+
+    rechecker = ConfiguredRechecker(
+        source_repository=tmp_path,
+        worktree_root=tmp_path / "worktrees",
+        runner=runner,
+    )
+
+    rechecker._ensure_complete_history()
+
+    assert commands == [
+        ["git", "rev-parse", "--is-shallow-repository"],
+        ["git", "fetch", "--unshallow", "origin"],
+    ]
+
+
 def test_rechecker_surfaces_failed_command_stderr(tmp_path):
     def runner(command, **kwargs):
         raise subprocess.CalledProcessError(

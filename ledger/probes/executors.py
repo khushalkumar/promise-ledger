@@ -138,7 +138,7 @@ def _imported_tenant_registry_tables(tree: ast.AST, target_root: Path) -> set[st
     }
     tables: set[str] = set()
     for module, local_name in imported:
-        if local_name not in used_names:
+        if local_name not in used_names or not _iterates_entire_registry(tree, local_name):
             continue
         module_path = _target_path(target_root, module.replace(".", "/") + ".py")
         module_tree = ast.parse(module_path.read_text())
@@ -170,6 +170,20 @@ def _imported_tenant_registry_tables(tree: ast.AST, target_root: Path) -> set[st
                 if symbol in registry_symbols
             )
     return tables
+
+
+def _iterates_entire_registry(tree: ast.AST, name: str) -> bool:
+    return any(
+        isinstance(node, ast.For)
+        and isinstance(node.iter, ast.Call)
+        and not node.iter.args
+        and not node.iter.keywords
+        and isinstance(node.iter.func, ast.Attribute)
+        and node.iter.func.attr == "values"
+        and isinstance(node.iter.func.value, ast.Name)
+        and node.iter.func.value.id == name
+        for node in ast.walk(tree)
+    )
 
 
 def _resolve_retention_days(

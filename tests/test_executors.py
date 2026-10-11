@@ -91,6 +91,35 @@ def test_static_probe_resolves_imported_tenant_table_registry(tmp_path):
     assert detail == "purge covers every required tenant table"
 
 
+def test_static_probe_does_not_treat_partial_registry_lookup_as_full_coverage(tmp_path):
+    database_module = tmp_path / "tasklane" / "db.py"
+    database_module.parent.mkdir()
+    database_module.write_text(
+        'users = Table("users")\n'
+        'audit_events = Table("audit_events")\n'
+        "TENANT_TABLES = {table.name: table for table in (users, audit_events)}\n"
+    )
+    source = tmp_path / "tasklane" / "jobs" / "purge_tenant.py"
+    source.parent.mkdir()
+    source.write_text(
+        "from tasklane.db import TENANT_TABLES\n"
+        'for table_name in ("users",):\n'
+        "    delete(TENANT_TABLES[table_name])\n"
+    )
+    probe = make_probe(
+        "static.purge_covers_tables",
+        {
+            "path": "tasklane/jobs/purge_tenant.py",
+            "required_tables": ["users", "audit_events"],
+        },
+    )
+
+    outcome, detail = execute_probe(probe, context(tmp_path))
+
+    assert outcome is ProbeOutcome.FAIL
+    assert detail == "purge omits tenant table(s): audit_events"
+
+
 def test_terraform_probe_reports_retention_above_contract_limit(tmp_path):
     terraform = tmp_path / "infra" / "storage.tf"
     terraform.parent.mkdir()

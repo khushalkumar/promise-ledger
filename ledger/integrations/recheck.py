@@ -53,6 +53,7 @@ class ConfiguredRechecker:
         worktree.rmdir()
         added = False
         try:
+            self._ensure_complete_history()
             self._run(["git", "fetch", "origin", "main"], cwd=self.source_repository)
             self._run(
                 ["git", "worktree", "add", "--detach", str(worktree), "origin/main"],
@@ -115,6 +116,17 @@ class ConfiguredRechecker:
             ["git", "fetch", "origin", commit_sha],
             cwd=self.source_repository,
         )
+
+    def _ensure_complete_history(self) -> None:
+        shallow = self._run(
+            ["git", "rev-parse", "--is-shallow-repository"],
+            cwd=self.source_repository,
+        )
+        if shallow.stdout.strip() == "true":
+            self._run(
+                ["git", "fetch", "--unshallow", "origin"],
+                cwd=self.source_repository,
+            )
 
     def _run(self, command: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
         try:
