@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ProbeOutcome(StrEnum):
@@ -54,6 +54,7 @@ class AssetMap(BaseModel):
     tenant_tables: list[str]
     source_files: list[str]
     terraform_files: list[str]
+    config_files: list[str] = Field(default_factory=list)
 
 
 class Probe(BaseModel):

@@ -1,3 +1,4 @@
+import json
 import sqlite3
 
 import pytest
@@ -107,3 +108,75 @@ def test_cloud_stub_surfaces_access_denied_as_an_executor_error(tmp_path):
 
     with pytest.raises(PermissionError, match="AccessDenied"):
         execute_probe(probe, context(tmp_path))
+
+
+def test_json_probes_check_exact_and_minimum_values(tmp_path):
+    config = tmp_path / "config" / "compliance.json"
+    config.parent.mkdir()
+    config.write_text(
+        json.dumps(
+            {
+                "plans": {"business": {"sso": True}},
+                "availability": {"monthly_target_percent": 99.9},
+            }
+        )
+    )
+    exact = make_probe(
+        "json.value_equals",
+        {
+            "path": "config/compliance.json",
+            "key_path": ["plans", "business", "sso"],
+            "expected": True,
+        },
+    )
+    minimum = make_probe(
+        "json.value_at_least",
+        {
+            "path": "config/compliance.json",
+            "key_path": ["availability", "monthly_target_percent"],
+            "minimum": 99.9,
+        },
+    )
+
+    probe_context = context(tmp_path)
+    assert execute_probe(exact, probe_context)[0] is ProbeOutcome.PASS
+    assert execute_probe(minimum, probe_context)[0] is ProbeOutcome.PASS
+
+
+def test_terraform_region_probe_finds_disallowed_provider(tmp_path):
+    terraform = tmp_path / "infra" / "storage.tf"
+    terraform.parent.mkdir()
+    terraform.write_text(
+        'provider "aws" { region = "eu-west-1" }\n'
+        'provider "aws" { alias = "exports" region = "us-east-1" }\n'
+    )
+    probe = make_probe(
+        "terraform.allowed_regions",
+        {"path": "infra/storage.tf", "allowed_regions": ["eu-west-1"]},
+    )
+
+    outcome, detail = execute_probe(probe, context(tmp_path))
+
+    assert outcome is ProbeOutcome.FAIL
+    assert detail == "Terraform provider region(s) outside contract: us-east-1"
+
+
+def test_terraform_attribute_probe_checks_encryption_at_rest(tmp_path):
+    terraform = tmp_path / "infra" / "database.tf"
+    terraform.parent.mkdir()
+    terraform.write_text(
+        'resource "aws_db_instance" "primary" {\n  storage_encrypted = true\n}\n'
+    )
+    probe = make_probe(
+        "terraform.attribute_equals",
+        {
+            "path": "infra/database.tf",
+            "attribute": "storage_encrypted",
+            "expected": True,
+        },
+    )
+
+    outcome, detail = execute_probe(probe, context(tmp_path))
+
+    assert outcome is ProbeOutcome.PASS
+    assert detail == "storage_encrypted is true; expected true"

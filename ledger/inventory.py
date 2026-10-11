@@ -32,8 +32,13 @@ def build_inventory(context: ProbeContext) -> AssetMap:
         str(path.relative_to(context.target_root))
         for path in (context.target_root / "infra").glob("*.tf")
     )
+    config_files = sorted(
+        str(path.relative_to(context.target_root))
+        for path in (context.target_root / "config").rglob("*.json")
+    )
     return AssetMap(
         tenant_tables=tenant_tables,
         source_files=source_files,
         terraform_files=terraform_files,
+        config_files=config_files,
     )
