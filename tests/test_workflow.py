@@ -2,6 +2,7 @@ from ledger.models import (
     AgentChange,
     LedgerRun,
     ProbeOutcome,
+    PromiseKind,
     PullRequestRef,
     RemediationResult,
     RootCause,
@@ -119,3 +120,39 @@ def test_autonomous_workflow_opens_prs_and_rechecks_only_impacted_probes(tmp_pat
         WorkflowStage.RECHECKING,
         WorkflowStage.COMPLETED,
     ]
+
+
+def test_autonomous_workflow_never_auto_remediates_data_residency(tmp_path):
+    deletion = _violated_report()
+    residency = deletion.model_copy(
+        update={
+            "promise": deletion.promise.model_copy(
+                update={"id": "P-021", "kind": PromiseKind.DATA_RESIDENCY}
+            )
+        }
+    )
+    investigated = []
+
+    class RecordingInvestigator:
+        def investigate(self, report):
+            investigated.append(report.promise.id)
+            return []
+
+    class NoopRechecker:
+        def recheck(self, *, baseline, affected_probe_ids, commit_shas):
+            return baseline
+
+    workflow = AutonomousWorkflow(
+        store=RunStore(f"sqlite:///{tmp_path / 'state.db'}"),
+        investigator=RecordingInvestigator(),
+        remediator=StubRemediator(),
+        rechecker=NoopRechecker(),
+    )
+
+    workflow.remediate(
+        run_id="run-safe-policy",
+        target_repository="khushalkumar/tasklane-demo",
+        baseline=LedgerRun(reports=[deletion, residency]),
+    )
+
+    assert investigated == ["P-014"]

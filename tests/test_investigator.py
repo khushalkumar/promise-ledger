@@ -103,6 +103,51 @@ def test_evidence_investigator_collects_entire_impact_and_git_history(tmp_path):
     assert commands[2][:3] == ["git", "log", "-L"]
 
 
+def test_investigator_canonicalizes_paths_and_merges_duplicate_file_causes(tmp_path):
+    class DuplicateBackend:
+        def complete_json(self, system: str, user: str) -> str:
+            return json.dumps(
+                {
+                    "root_causes": [
+                        {
+                            "id": "model-id-one",
+                            "promise_id": "P-014",
+                            "probe_ids": ["P-014-static-purge"],
+                            "category": "source_code",
+                            "file_path": "jobs/purge_tenant.py",
+                            "summary": "The hard-coded purge list is incomplete.",
+                            "fix_goal": "Use complete tenant table coverage.",
+                        },
+                        {
+                            "id": "model-id-two",
+                            "promise_id": "P-014",
+                            "probe_ids": ["P-014-data-audit_events"],
+                            "category": "source_code",
+                            "file_path": "purge_tenant.py",
+                            "summary": "Expired audit events remain.",
+                            "fix_goal": "Delete expired audit events.",
+                        },
+                    ]
+                }
+            )
+
+    causes = investigate_violation(
+        _violated_report(),
+        target_root=tmp_path,
+        backend=DuplicateBackend(),
+        entire_context="impact",
+        git_context="history",
+    )
+
+    assert len(causes) == 1
+    assert causes[0].id == "rc-p-014-tasklane-jobs-purge-tenant-py"
+    assert causes[0].file_path == "tasklane/jobs/purge_tenant.py"
+    assert causes[0].probe_ids == [
+        "P-014-static-purge",
+        "P-014-data-audit_events",
+    ]
+
+
 def _violated_report() -> PromiseReport:
     promise = Promise(
         id="P-014",

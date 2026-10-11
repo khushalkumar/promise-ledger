@@ -7,6 +7,7 @@ import neatlogs
 from ledger.models import (
     AutonomousRunResult,
     LedgerRun,
+    PromiseKind,
     PromiseReport,
     RemediationResult,
     RootCause,
@@ -38,6 +39,9 @@ class Rechecker(Protocol):
         affected_probe_ids: list[str],
         commit_shas: list[str],
     ) -> LedgerRun: ...
+
+
+SAFE_AUTO_REMEDIATION_KINDS = {PromiseKind.DELETION_DEADLINE}
 
 
 class AutonomousWorkflow:
@@ -80,7 +84,12 @@ class AutonomousWorkflow:
                 for probe in report.probes
             }
             self.store.replace_probe_dependencies(run_id, dependencies)
-            violated = [report for report in baseline.reports if report.verdict is Verdict.VIOLATED]
+            violated = [
+                report
+                for report in baseline.reports
+                if report.verdict is Verdict.VIOLATED
+                and report.promise.kind in SAFE_AUTO_REMEDIATION_KINDS
+            ]
 
             self.store.record_stage(
                 run_id,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
@@ -147,4 +148,66 @@ def investigate_violation(
         path = Path(cause.file_path)
         if path.is_absolute() or ".." in path.parts:
             raise ValueError(f"root cause {cause.id} has an unsafe file path")
-    return batch.root_causes
+    return _canonicalize_and_merge(batch.root_causes, failed)
+
+
+def _canonicalize_and_merge(
+    causes: list[RootCause], failed: list[dict[str, object]]
+) -> list[RootCause]:
+    allowed_paths = sorted(
+        {
+            path
+            for item in failed
+            if isinstance(item.get("probe"), dict)
+            for path in [item["probe"].get("params", {}).get("path")]
+            if isinstance(path, str)
+        }
+    )
+    probe_order = {
+        item["probe"]["id"]: index
+        for index, item in enumerate(failed)
+        if isinstance(item.get("probe"), dict)
+    }
+    grouped: dict[tuple[str, str], list[RootCause]] = {}
+    for cause in causes:
+        canonical_path = _canonical_path(cause, allowed_paths)
+        canonical = cause.model_copy(update={"file_path": canonical_path})
+        grouped.setdefault((canonical.promise_id, canonical_path), []).append(canonical)
+
+    merged = []
+    for (promise_id, file_path), file_causes in grouped.items():
+        probe_ids = sorted(
+            {probe_id for cause in file_causes for probe_id in cause.probe_ids},
+            key=lambda probe_id: probe_order.get(probe_id, len(probe_order)),
+        )
+        summaries = list(dict.fromkeys(cause.summary for cause in file_causes))
+        goals = list(dict.fromkeys(cause.fix_goal for cause in file_causes))
+        line_starts = [cause.line_start for cause in file_causes if cause.line_start is not None]
+        slug = re.sub(r"[^a-z0-9]+", "-", file_path.lower()).strip("-")
+        merged.append(
+            RootCause(
+                id=f"rc-{promise_id.lower()}-{slug}"[:120].rstrip("-"),
+                promise_id=promise_id,
+                probe_ids=probe_ids,
+                category=file_causes[0].category,
+                file_path=file_path,
+                line_start=min(line_starts) if line_starts else None,
+                summary=" ".join(summaries),
+                fix_goal=" ".join(goals),
+            )
+        )
+    return merged
+
+
+def _canonical_path(cause: RootCause, allowed_paths: list[str]) -> str:
+    if cause.file_path in allowed_paths:
+        return cause.file_path
+    candidate = Path(cause.file_path)
+    matches = [
+        path
+        for path in allowed_paths
+        if path.endswith(f"/{cause.file_path}") or Path(path).name == candidate.name
+    ]
+    if len(matches) != 1:
+        raise ValueError(f"root cause {cause.id} does not name a grounded repository file")
+    return matches[0]
