@@ -131,7 +131,10 @@ def _implementation_prompt(root_cause: RootCause, contract_text: str) -> str:
     return (
         "Implement one narrow contractual remediation in this isolated worktree. "
         "Change only files needed for this root cause, add or update a regression test, "
-        "run the repository test and lint commands, and do not commit, push, or open a PR.\n\n"
+        "run the repository test and lint commands, and do not commit, push, or open a PR. "
+        "If the change alters a CLI or another interface used by `.promise-ledger.json`, "
+        "update that file too and run its verification commands so the remediation remains "
+        "self-consistent.\n\n"
         f"Promise: {root_cause.promise_id}\n"
         f"Contract: {contract_text}\n"
         f"Root cause: {root_cause.summary}\n"

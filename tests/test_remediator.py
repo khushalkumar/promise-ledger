@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ledger.agents.remediator import RemediationAgent
+from ledger.agents.remediator import RemediationAgent, _implementation_prompt
 from ledger.models import AgentChange, PullRequestRef, RootCause
 
 
@@ -48,6 +48,26 @@ class StubPullRequests:
             commit_sha=request["commit_sha"],
             created=True,
         )
+
+
+def test_implementation_prompt_requires_verification_config_compatibility():
+    cause = RootCause(
+        id="rc-p014-audit-events",
+        promise_id="P-014",
+        probe_ids=["P-014-static-purge"],
+        category="source_code",
+        file_path="tasklane/jobs/purge_tenant.py",
+        summary="The recurring purge omits audit events.",
+        fix_goal="Make the recurring purge contract-compliant.",
+    )
+
+    prompt = _implementation_prompt(
+        cause,
+        "Delete customer data within 30 days.",
+    )
+
+    assert ".promise-ledger.json" in prompt
+    assert "verification commands" in prompt
 
 
 def test_remediator_runs_agent_and_opens_normal_idempotent_pull_request(tmp_path):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import shlex
 import subprocess
 import tempfile
 from collections.abc import Callable
@@ -114,10 +115,22 @@ class ConfiguredRechecker:
         )
 
     def _run(self, command: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
-        return self.runner(
-            command,
-            cwd=cwd,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            return self.runner(
+                command,
+                cwd=cwd,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as error:
+            output = "\n".join(
+                stream.strip()
+                for stream in (error.stdout, error.stderr)
+                if stream and stream.strip()
+            )
+            detail = output[-4000:] if output else "no command output"
+            raise RuntimeError(
+                f"Verification command failed ({error.returncode}): "
+                f"{shlex.join(command)}\n{detail}"
+            ) from error
