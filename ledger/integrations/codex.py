@@ -40,6 +40,8 @@ class CodexCodingAgent:
             command = [
                 self.binary,
                 "exec",
+                "--config",
+                "mcp_servers.neatlogs.enabled=false",
                 "--json",
                 "--approve-for-me",
                 "--dangerously-bypass-hook-trust",
