@@ -3,6 +3,7 @@ from collections.abc import Sequence
 import neatlogs
 
 from ledger.agents.compiler import compile_checks
+from ledger.conflicts import detect_conflicts
 from ledger.inventory import build_inventory
 from ledger.models import LedgerRun, Promise, PromiseReport
 from ledger.probes.executors import ProbeContext, execute_probe
@@ -26,4 +27,4 @@ def run_ledger(promises: Sequence[Promise], context: ProbeContext) -> LedgerRun:
                 verdict=verdict,
             )
         )
-    return LedgerRun(reports=reports)
+    return LedgerRun(reports=reports, conflicts=detect_conflicts(promises))

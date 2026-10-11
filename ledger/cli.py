@@ -71,5 +71,7 @@ def run_command(
 
         for report in ledger_run.reports:
             typer.echo(f"{report.promise.id}  {report.verdict}")
+        for conflict in ledger_run.conflicts:
+            typer.echo(f"{conflict.id}  {conflict.verdict}  {conflict.detail}")
     finally:
         finish_tracing(tracing_enabled)

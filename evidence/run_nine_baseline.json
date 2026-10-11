@@ -51,7 +51,7 @@
           "params": {
             "table": "attachments",
             "deadline_days": 30,
-            "now": "2026-10-11T02:33:27.797402+00:00"
+            "now": "2026-10-11T02:36:06.295084+00:00"
           },
           "depends_on": [
             "attachments",
@@ -66,7 +66,7 @@
           "params": {
             "table": "audit_events",
             "deadline_days": 30,
-            "now": "2026-10-11T02:33:27.797402+00:00"
+            "now": "2026-10-11T02:36:06.295084+00:00"
           },
           "depends_on": [
             "audit_events",
@@ -81,7 +81,7 @@
           "params": {
             "table": "comments",
             "deadline_days": 30,
-            "now": "2026-10-11T02:33:27.797402+00:00"
+            "now": "2026-10-11T02:36:06.295084+00:00"
           },
           "depends_on": [
             "comments",
@@ -96,7 +96,7 @@
           "params": {
             "table": "invites",
             "deadline_days": 30,
-            "now": "2026-10-11T02:33:27.797402+00:00"
+            "now": "2026-10-11T02:36:06.295084+00:00"
           },
           "depends_on": [
             "invites",
@@ -111,7 +111,7 @@
           "params": {
             "table": "tasks",
             "deadline_days": 30,
-            "now": "2026-10-11T02:33:27.797402+00:00"
+            "now": "2026-10-11T02:36:06.295084+00:00"
           },
           "depends_on": [
             "tasks",
@@ -126,7 +126,7 @@
           "params": {
             "table": "users",
             "deadline_days": 30,
-            "now": "2026-10-11T02:33:27.797402+00:00"
+            "now": "2026-10-11T02:36:06.295084+00:00"
           },
           "depends_on": [
             "users",
@@ -624,6 +624,17 @@
         }
       ],
       "verdict": "holds"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "C-003",
+      "promise_ids": [
+        "P-014",
+        "P-044"
+      ],
+      "verdict": "violated",
+      "detail": "Northwind_DPA_v3.pdf limits overlapping data to 30 days, but privacy_policy.md allows 90 days"
     }
   ]
 }

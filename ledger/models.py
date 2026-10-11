@@ -92,5 +92,13 @@ class PromiseReport(BaseModel):
     verdict: Verdict
 
 
+class PromiseConflict(BaseModel):
+    id: str
+    promise_ids: list[str]
+    verdict: Verdict
+    detail: str
+
+
 class LedgerRun(BaseModel):
     reports: list[PromiseReport]
+    conflicts: list[PromiseConflict] = Field(default_factory=list)

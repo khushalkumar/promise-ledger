@@ -71,3 +71,23 @@ def test_run_produces_violation_recovery_and_unverifiable_reports(tmp_path):
     assert reports["P-031"].verdict is Verdict.UNVERIFIABLE
     assert reports["P-031"].probes == []
 
+
+def test_run_includes_cross_document_conflicts(tmp_path):
+    dpa = promise("P-014", PromiseKind.DELETION_DEADLINE, "customer personal data")
+    policy = Promise(
+        id="P-044",
+        kind=PromiseKind.RETENTION_LIMIT,
+        actor="Tasklane",
+        object="customer personal data and backups",
+        includes=["backups"],
+        deadline_days=90,
+        source=SourceSpan(
+            document="privacy_policy.md",
+            clause="5",
+            text="retain customer personal data and backups for up to 90 days",
+        ),
+    )
+
+    ledger_run = run_ledger([dpa, policy], demo_context(tmp_path))
+
+    assert [conflict.id for conflict in ledger_run.conflicts] == ["C-003"]
