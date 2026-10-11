@@ -8,7 +8,7 @@ from sqlalchemy import JSON, Column, delete
 from sqlalchemy.engine import make_url
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from ledger.models import WorkflowEvent, WorkflowRun, WorkflowStage
+from ledger.models import LedgerRun, WorkflowEvent, WorkflowRun, WorkflowStage
 
 
 class RunRow(SQLModel, table=True):
@@ -32,6 +32,14 @@ class ProbeDependencyRow(SQLModel, table=True):
     run_id: str = Field(index=True, foreign_key="runrow.id")
     probe_id: str = Field(index=True)
     dependency: str = Field(index=True)
+
+
+class LedgerResultRow(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    run_id: str = Field(index=True, foreign_key="runrow.id")
+    phase: str = Field(index=True)
+    payload: dict[str, Any] = Field(sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class RunStore:
@@ -148,3 +156,29 @@ class RunStore:
                 )
             ).all()
         return sorted(set(rows))
+
+    def save_ledger_result(self, run_id: str, *, phase: str, ledger: LedgerRun) -> None:
+        if phase not in {"baseline", "final"}:
+            raise ValueError(f"unsupported ledger result phase: {phase}")
+        with Session(self.engine) as session:
+            if session.get(RunRow, run_id) is None:
+                raise KeyError(run_id)
+            session.add(
+                LedgerResultRow(
+                    run_id=run_id,
+                    phase=phase,
+                    payload=ledger.model_dump(mode="json"),
+                )
+            )
+            session.commit()
+
+    def latest_ledger_result(self, *, phase: str = "final") -> tuple[str, LedgerRun] | None:
+        with Session(self.engine) as session:
+            row = session.exec(
+                select(LedgerResultRow)
+                .where(LedgerResultRow.phase == phase)
+                .order_by(LedgerResultRow.id.desc())
+            ).first()
+        if row is None:
+            return None
+        return row.run_id, LedgerRun.model_validate(row.payload)

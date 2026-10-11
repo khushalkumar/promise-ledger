@@ -52,3 +52,20 @@ def test_run_store_creates_parent_directory_for_fresh_sqlite_database(tmp_path):
 
     assert database.exists()
     store.create_run("run-fresh", target_repository="owner/repository")
+
+
+def test_run_store_persists_and_returns_latest_ledger_result(tmp_path):
+    from ledger.models import LedgerRun
+    from tests.test_investigator import _violated_report
+
+    store = RunStore(f"sqlite:///{tmp_path / 'state.db'}")
+    store.create_run("run-1", target_repository="owner/repository")
+    first = LedgerRun(reports=[_violated_report()])
+    store.save_ledger_result("run-1", phase="baseline", ledger=first)
+    store.save_ledger_result("run-1", phase="final", ledger=first)
+
+    latest = store.latest_ledger_result(phase="final")
+
+    assert latest is not None
+    assert latest[0] == "run-1"
+    assert latest[1].reports[0].promise.id == "P-014"

@@ -2,7 +2,10 @@ import json
 
 from fastapi.testclient import TestClient
 
+from ledger.models import LedgerRun
+from ledger.store import RunStore
 from ledger.web import create_app
+from tests.test_investigator import _violated_report
 
 
 def test_ledger_page_renders_verdict_evidence_and_conflicts(tmp_path):
@@ -62,3 +65,19 @@ def test_ledger_page_renders_verdict_evidence_and_conflicts(tmp_path):
     assert "Northwind_DPA_v3.pdf" in response.text
     assert "audit_events has 1284 rows" in response.text
     assert "C-003" in response.text
+
+
+def test_ledger_page_renders_latest_durable_run_without_json_file(tmp_path):
+    store = RunStore(f"sqlite:///{tmp_path / 'state.db'}")
+    store.create_run("run-cloud", target_repository="khushalkumar/tasklane-demo")
+    store.save_ledger_result(
+        "run-cloud",
+        phase="final",
+        ledger=LedgerRun(reports=[_violated_report()]),
+    )
+
+    response = TestClient(create_app(store=store)).get("/")
+
+    assert response.status_code == 200
+    assert "P-014" in response.text
+    assert "run-cloud" in response.text

@@ -78,6 +78,7 @@ class AutonomousWorkflow:
                 WorkflowStage.AUDITING,
                 {"reports": len(baseline.reports)},
             )
+            self.store.save_ledger_result(run_id, phase="baseline", ledger=baseline)
             dependencies = {
                 probe.id: probe.depends_on
                 for report in baseline.reports
@@ -145,6 +146,7 @@ class AutonomousWorkflow:
                 affected_probe_ids=affected_probe_ids,
                 commit_shas=commit_shas,
             )
+            self.store.save_ledger_result(run_id, phase="final", ledger=rechecked)
             self.store.record_stage(
                 run_id,
                 WorkflowStage.COMPLETED,

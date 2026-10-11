@@ -6,22 +6,30 @@ from collections import Counter
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from ledger.store import RunStore
+
 PACKAGE_ROOT = Path(__file__).parent
 
 
-def create_app(evidence_path: Path) -> FastAPI:
+def create_app(
+    evidence_path: Path | None = None,
+    *,
+    store: RunStore | None = None,
+) -> FastAPI:
+    if evidence_path is None and store is None:
+        raise ValueError("an evidence path or durable store is required")
     app = FastAPI(title="Promise Ledger")
     app.mount("/static", StaticFiles(directory=PACKAGE_ROOT / "static"), name="static")
     templates = Jinja2Templates(directory=PACKAGE_ROOT / "templates")
 
     @app.get("/", response_class=HTMLResponse)
     def ledger_page(request: Request) -> HTMLResponse:
-        evidence = json.loads(evidence_path.read_text())
+        evidence, evidence_name = _load_evidence(evidence_path, store)
         reports = evidence["reports"]
         for report in reports:
             for run in report["runs"]:
@@ -43,15 +51,40 @@ def create_app(evidence_path: Path) -> FastAPI:
             "document_count": len(
                 {report["promise"]["source"]["document"] for report in reports}
             ),
-            "evidence_name": evidence_path.name,
+            "evidence_name": evidence_name,
         }
         return templates.TemplateResponse(request=request, name="ledger.html", context=context)
+
+    @app.get("/api/runs/latest")
+    def latest_run() -> dict[str, object]:
+        evidence, evidence_name = _load_evidence(evidence_path, store)
+        return {"run_id": evidence_name, "ledger": evidence}
 
     return app
 
 
+def _load_evidence(
+    evidence_path: Path | None,
+    store: RunStore | None,
+) -> tuple[dict[str, object], str]:
+    if store is not None:
+        latest = store.latest_ledger_result()
+        if latest is None:
+            raise HTTPException(status_code=503, detail="No completed ledger run is available")
+        run_id, ledger = latest
+        return ledger.model_dump(mode="json"), run_id
+    assert evidence_path is not None
+    return json.loads(evidence_path.read_text()), evidence_path.name
+
+
 def main() -> None:
-    evidence_path = Path(os.getenv("PROMISE_LEDGER_RUN", "evidence/run_live_audit.json"))
+    state_database = os.getenv("PROMISE_LEDGER_STATE_DATABASE")
+    evidence_path = None
+    store = None
+    if state_database:
+        store = RunStore(state_database)
+    else:
+        evidence_path = Path(os.getenv("PROMISE_LEDGER_RUN", "evidence/run_live_audit.json"))
     host = os.getenv("PROMISE_LEDGER_HOST", "127.0.0.1")
     port = int(os.getenv("PROMISE_LEDGER_PORT", "8000"))
-    uvicorn.run(create_app(evidence_path), host=host, port=port)
+    uvicorn.run(create_app(evidence_path, store=store), host=host, port=port)
