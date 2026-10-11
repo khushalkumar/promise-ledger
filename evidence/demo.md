@@ -46,18 +46,18 @@ Pause briefly on `P-021` and `P-031`.
 
 ## 2:10-2:35 - A reliable agent
 
-**Screen:** Show `evidence/extraction_drift_split.json`, then the canonical registry.
+**Screen:** Show the v1-v2 benchmark, then the Entire Graph hit for `purge_expired_tenants`.
 
 **Say:**
 
-> LLM output drifts. In this recorded run the model split one policy sentence into two promises. The typed schema, one repair retry, deterministic deduplication, and canonical ID registry still produced the same nine-promise ledger. Neatlogs captures every agent and probe span; the committed Entire graph configuration makes repository context inspectable alongside the Git history.
+> A naive compiler mislabels three of ten seeded cases: it treats missing evidence as success and an access error as a violation. The grounded compiler makes zero of those mistakes. Neatlogs preserves both benchmark semantics as separate spans, and Entire Graph locates the exact purge function from the contract terms during runtime inventory.
 
 ## 2:35-3:00 - The business
 
-**Screen:** `evidence/cfo_plan.md` scenario table.
+**Screen:** The cfo.ai scenario model, then `docs/business_plan.pdf`.
 
 **Say:**
 
-> The live audit used 3,851 tokens across three calls, about 1.7 cents at the model-price assumption in the plan. Token cost is not the margin constraint; review support and infrastructure are. The base model prices monitored contracts at $39 per month and reaches roughly 76% gross margin. Promise Ledger makes contract truth testable, fixable, and economically practical.
+> The live audit used 3,815 tokens across three calls, about 1.7 cents at the model-price assumption in the plan. Token cost is not the margin constraint; review support and infrastructure are. The base model prices monitored contracts at $39 per month and reaches roughly 76% gross margin. Promise Ledger makes contract truth testable, fixable, and economically practical.
 
 End on the ledger hero and the line: **Every promise gets a chain of proof.**

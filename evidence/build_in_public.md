@@ -41,6 +41,6 @@ The combined re-check turns only the deletion promise green. Residency and the p
 
 Promise Ledger now runs contract -> typed promise -> grounded probe -> verdict -> PR -> re-check.
 
-The live three-document audit uses 3,851 tokens across three model calls. Our cfo.ai-ready base model projects about 76% gross margin at 200 monitored contracts.
+The live three-document audit uses 3,815 tokens across three model calls. Our cfo.ai-ready base model projects about 76% gross margin at 200 monitored contracts.
 
 Every promise gets a chain of proof. #neatHack
