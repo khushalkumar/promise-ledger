@@ -24,6 +24,9 @@ class StubWorkspace:
         self.branches.append(branch)
         return self.root
 
+    def changed_files(self, worktree: Path) -> list[str]:
+        return ["tasklane/jobs/purge_tenant.py"]
+
     def commit_and_push(self, worktree: Path, *, branch: str, message: str) -> str:
         return "abc123"
 
@@ -80,6 +83,39 @@ def test_remediator_runs_agent_and_opens_normal_idempotent_pull_request(tmp_path
     assert "Promise Ledger run: `run-123`" in request["body"]
     assert "Entire session: `entire-session-123`" in request["body"]
     assert request["commit_sha"] == "abc123"
+
+
+def test_remediator_uses_git_changes_instead_of_model_reported_paths(tmp_path):
+    class EmptyReportingCodingAgent(StubCodingAgent):
+        def implement(self, **kwargs) -> AgentChange:
+            change = super().implement(**kwargs)
+            return change.model_copy(update={"changed_files": []})
+
+    workspace = StubWorkspace(tmp_path)
+    pull_requests = StubPullRequests()
+    agent = RemediationAgent(
+        coding_agent=EmptyReportingCodingAgent(),
+        workspace=workspace,
+        pull_requests=pull_requests,
+    )
+    cause = RootCause(
+        id="rc-p014-audit-events",
+        promise_id="P-014",
+        probe_ids=["P-014-static-purge"],
+        category="source_code",
+        file_path="tasklane/jobs/purge_tenant.py",
+        summary="The purge table list omits audit_events.",
+        fix_goal="Delete audit_events in the same tenant purge transaction.",
+    )
+
+    result = agent.remediate(
+        run_id="run-123",
+        root_cause=cause,
+        contract_text="Delete customer data within 30 days.",
+    )
+
+    assert result.change is not None
+    assert result.change.changed_files == ["tasklane/jobs/purge_tenant.py"]
 
 
 def test_remediator_reuses_existing_open_pull_request_without_running_agent(tmp_path):

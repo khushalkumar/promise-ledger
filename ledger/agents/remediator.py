@@ -16,6 +16,8 @@ class CodingAgent(Protocol):
 class Workspace(Protocol):
     def prepare(self, branch: str) -> Path: ...
 
+    def changed_files(self, worktree: Path) -> list[str]: ...
+
     def commit_and_push(self, worktree: Path, *, branch: str, message: str) -> str: ...
 
 
@@ -68,8 +70,15 @@ class RemediationAgent:
             root_cause=root_cause,
             prompt=prompt,
         )
-        if root_cause.file_path not in change.changed_files:
-            raise ValueError("coding agent did not modify the investigated file")
+        actual_changed_files = self.workspace.changed_files(worktree)
+        if root_cause.file_path not in actual_changed_files:
+            reported = ", ".join(change.changed_files) or "none"
+            actual = ", ".join(actual_changed_files) or "none"
+            raise ValueError(
+                "coding agent did not modify the investigated file "
+                f"(reported: {reported}; git: {actual})"
+            )
+        change = change.model_copy(update={"changed_files": actual_changed_files})
         commit_sha = self.workspace.commit_and_push(
             worktree,
             branch=branch,
