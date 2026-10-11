@@ -1,0 +1,5 @@
+project_id         = "your-promise-ledger-project"
+billing_account_id = "000000-000000-000000"
+region             = "asia-south1"
+monthly_budget_usd = 250
+

@@ -85,6 +85,13 @@ PROMISE_LEDGER_RUN=evidence/run_live_audit.json uv run ledger-ui
 
 Then visit `http://127.0.0.1:8000`.
 
+## Production on GCP
+
+The production path uses Cloud Run services, an autonomous Cloud Run Job, Cloud SQL PostgreSQL 16,
+Secret Manager, Artifact Registry, Cloud Build, Cloud Scheduler, durable ledger state, and a $250
+billing budget. Deployment is one scripted command after the GCP owner links billing and grants
+the required roles; see [the GCP deployment guide](docs/gcp-deployment.md).
+
 ## Evidence
 
 - `evidence/run_live_audit.json` - saved live Azure extraction plus deterministic verdicts.
