@@ -97,6 +97,8 @@ Then visit `http://127.0.0.1:8000`.
 - `evidence/run_final.md` - compact judge-facing audit, remediation, improvement, and economics index.
 - `evidence/run_remediated.json` - combined re-check of the two open remediation PRs.
 - `evidence/remediation.md` - exact PR, commit, and verification chain.
+- `evidence/cfo.md` - verified cfo.ai scenario model, export, and formula-check record.
+- `evidence/cfo_scenario_model.xlsx` - cfo.ai spreadsheet export for Downside, Base, and Growth.
 - `docs/business_plan.pdf` - measured unit economics, three operating scenarios, and the cfo.ai entry model.
 
 The contracts and Tasklane data are entirely fictional. The generated PDFs are visibly marked as demonstration documents.

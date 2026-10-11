@@ -33,6 +33,7 @@ The PR heads were combined in an isolated checkout. The Tasklane test suite pass
 ## Remaining submission captures
 
 - Add signed-in Neatlogs screenshots or public trace links.
-- Add the cfo.ai model screenshot/export after entering the prepared rows.
 - Add final Entire checkpoint evidence after the Codex hooks are approved.
 - Replace build-in-public draft slots with published links only after explicit posting approval.
+
+The cfo.ai model is complete. Its three scenarios were verified against the prepared inputs, and the exported workbook plus rendered comparison are recorded in `evidence/cfo.md`.
