@@ -1,8 +1,10 @@
 import json
+import subprocess
 
 from fastapi.testclient import TestClient
 
 import ledger.web
+from ledger.agent_service import AgentRunController
 from ledger.models import LedgerRun
 from ledger.store import RunStore
 from ledger.web import create_app
@@ -108,3 +110,70 @@ def test_main_uses_render_port_when_promise_ledger_port_is_unset(monkeypatch, tm
     ledger.web.main()
 
     assert calls == [{"host": "127.0.0.1", "port": 10000}]
+
+
+def test_ledger_page_falls_back_to_saved_evidence_before_first_durable_run(tmp_path):
+    evidence = tmp_path / "run.json"
+    evidence.write_text(json.dumps({"reports": [], "conflicts": []}))
+    store = RunStore(f"sqlite:///{tmp_path / 'state.db'}")
+
+    response = TestClient(create_app(evidence, store=store)).get("/api/runs/latest")
+
+    assert response.status_code == 200
+    assert response.json()["run_id"] == "run.json"
+
+
+def test_agent_run_trigger_requires_token_and_reports_completion(tmp_path):
+    calls = []
+
+    def runner(command, **kwargs):
+        calls.append((command, kwargs))
+        return subprocess.CompletedProcess(command, 0, stdout="Run completed", stderr="")
+
+    controller = AgentRunController(
+        command=["/app/scripts/render-agent-run.sh"],
+        runner=runner,
+        run_id_factory=lambda: "pl-render-test",
+        synchronous=True,
+    )
+    evidence = tmp_path / "run.json"
+    evidence.write_text(json.dumps({"reports": [], "conflicts": []}))
+    client = TestClient(
+        create_app(evidence, agent_controller=controller, trigger_token="top-secret")
+    )
+
+    unauthorized = client.post("/api/agent-runs")
+    accepted = client.post(
+        "/api/agent-runs", headers={"Authorization": "Bearer top-secret"}
+    )
+    status = client.get(
+        "/api/agent-runs/status", headers={"Authorization": "Bearer top-secret"}
+    )
+
+    assert unauthorized.status_code == 401
+    assert accepted.status_code == 202
+    assert accepted.json() == {"run_id": "pl-render-test", "status": "completed"}
+    assert status.status_code == 200
+    assert status.json()["status"] == "completed"
+    assert calls[0][1]["env"]["PROMISE_LEDGER_RUN_ID"] == "pl-render-test"
+
+
+def test_agent_run_trigger_rejects_parallel_run(tmp_path):
+    controller = AgentRunController(
+        command=["ignored"],
+        runner=lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0),
+        run_id_factory=lambda: "pl-existing",
+        synchronous=True,
+    )
+    controller._status = {"run_id": "pl-existing", "status": "running"}
+    evidence = tmp_path / "run.json"
+    evidence.write_text(json.dumps({"reports": [], "conflicts": []}))
+    client = TestClient(
+        create_app(evidence, agent_controller=controller, trigger_token="top-secret")
+    )
+
+    response = client.post(
+        "/api/agent-runs", headers={"Authorization": "Bearer top-secret"}
+    )
+
+    assert response.status_code == 409

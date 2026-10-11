@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from collections.abc import Callable
@@ -42,6 +43,7 @@ class CodexCodingAgent:
             command = [
                 self.binary,
                 "exec",
+                *_azure_provider_arguments(),
                 "--config",
                 "mcp_servers.neatlogs.enabled=false",
                 "--json",
@@ -84,6 +86,43 @@ class CodexCodingAgent:
             tests=output.tests,
             session_id=_thread_id(completed.stdout),
         )
+
+
+def _azure_provider_arguments() -> list[str]:
+    names = {
+        "endpoint": "PROMISE_LEDGER_AZURE_ENDPOINT",
+        "api_key": "PROMISE_LEDGER_AZURE_API_KEY",
+        "deployment": "PROMISE_LEDGER_AZURE_DEPLOYMENT",
+    }
+    values = {field: os.getenv(name) for field, name in names.items()}
+    if not any(values.values()):
+        return []
+    missing = [names[field] for field, value in values.items() if not value]
+    if missing:
+        raise ValueError(
+            f"Incomplete Azure Codex provider configuration: {', '.join(missing)}"
+        )
+    endpoint = str(values["endpoint"]).rstrip("/")
+    if not endpoint.endswith("/openai/v1"):
+        endpoint = f"{endpoint}/openai/v1"
+    deployment = str(values["deployment"])
+    return [
+        "--model",
+        deployment,
+        "--config",
+        'model_provider="promise_ledger_azure"',
+        "--config",
+        'model_providers.promise_ledger_azure.name="Azure OpenAI"',
+        "--config",
+        f"model_providers.promise_ledger_azure.base_url={json.dumps(endpoint)}",
+        "--config",
+        (
+            'model_providers.promise_ledger_azure.env_http_headers={"api-key" = '
+            '"PROMISE_LEDGER_AZURE_API_KEY"}'
+        ),
+        "--config",
+        'model_providers.promise_ledger_azure.wire_api="responses"',
+    ]
 
 
 def _thread_id(json_lines: str) -> str | None:

@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from typer.testing import CliRunner
 
@@ -295,3 +296,13 @@ def test_agent_run_command_wires_audit_remediation_and_output(tmp_path, monkeypa
     payload = json.loads(output.read_text())
     assert payload["baseline"]["reports"][0]["promise"]["id"] == "P-014"
     assert payload["run_id"].startswith("pl-")
+
+
+def test_render_agent_script_uses_azure_codex_and_stable_run_id():
+    script = (Path(__file__).parents[1] / "scripts" / "render-agent-run.sh").read_text()
+
+    assert "PROMISE_LEDGER_RUN_ID" in script
+    assert "PROMISE_LEDGER_AZURE_API_KEY" in script
+    assert "OPENAI_API_KEY" not in script
+    assert '--run-id "${run_id}"' in script
+    assert 'gh repo clone "${TARGET_REPOSITORY}"' in script

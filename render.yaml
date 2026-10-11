@@ -8,3 +8,9 @@ services:
     envVars:
       - key: PROMISE_LEDGER_RUN
         value: evidence/run_live_audit.json
+      - key: PROMISE_LEDGER_ENABLE_AGENT
+        value: "true"
+      - key: PROMISE_LEDGER_STATE_DATABASE
+        value: sqlite:////tmp/promise-ledger-state.db
+      - key: TARGET_REPOSITORY
+        value: khushalkumar/tasklane-demo

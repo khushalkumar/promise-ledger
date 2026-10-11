@@ -193,6 +193,52 @@ def test_codex_coding_agent_bypasses_pretrusted_hooks_for_automation(tmp_path):
     assert "mcp_servers.neatlogs.enabled=false" in commands[0]
 
 
+def test_codex_coding_agent_uses_azure_responses_provider_from_environment(
+    tmp_path, monkeypatch
+):
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        output_path = Path(command[command.index("--output-last-message") + 1])
+        output_path.write_text(
+            json.dumps({"summary": "fixed", "changed_files": ["app.py"], "tests": []})
+        )
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setenv("PROMISE_LEDGER_AZURE_ENDPOINT", "https://example.openai.azure.com/")
+    monkeypatch.setenv("PROMISE_LEDGER_AZURE_API_KEY", "secret-not-in-command")
+    monkeypatch.setenv("PROMISE_LEDGER_AZURE_DEPLOYMENT", "gpt-4.1")
+    agent = CodexCodingAgent(binary="codex", runner=runner)
+    cause = RootCause(
+        id="rc-1",
+        promise_id="P-014",
+        probe_ids=["probe-1"],
+        category="source_code",
+        file_path="app.py",
+        summary="Bug.",
+        fix_goal="Fix bug.",
+    )
+
+    agent.implement(worktree=worktree, root_cause=cause, prompt="Fix it")
+
+    command = commands[0]
+    assert command[command.index("--model") + 1] == "gpt-4.1"
+    assert 'model_provider="promise_ledger_azure"' in command
+    assert (
+        'model_providers.promise_ledger_azure.base_url="https://example.openai.azure.com/openai/v1"'
+        in command
+    )
+    assert (
+        'model_providers.promise_ledger_azure.env_http_headers={"api-key" = '
+        '"PROMISE_LEDGER_AZURE_API_KEY"}' in command
+    )
+    assert 'model_providers.promise_ledger_azure.wire_api="responses"' in command
+    assert "secret-not-in-command" not in " ".join(command)
+
+
 def test_codex_coding_agent_surfaces_cli_failure_without_command_dump(tmp_path):
     worktree = tmp_path / "worktree"
     worktree.mkdir()
