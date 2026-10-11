@@ -1,3 +1,5 @@
+from sqlalchemy import text
+
 from ledger.models import WorkflowStage
 from ledger.store import RunStore
 
@@ -20,6 +22,17 @@ def test_run_store_persists_stage_history_and_can_resume(tmp_path):
         WorkflowStage.INVESTIGATING,
     ]
     assert resumed.events[-1].payload == {"violations": ["P-014"]}
+
+
+def test_create_run_flushes_parent_before_foreign_key_event():
+    store = RunStore("sqlite:///:memory:")
+    with store.engine.connect() as connection:
+        connection.execute(text("PRAGMA foreign_keys=ON"))
+
+    created = store.create_run("run-fk", target_repository="owner/repository")
+
+    assert created.id == "run-fk"
+    assert created.events[0].stage is WorkflowStage.CREATED
 
 
 def test_run_store_records_probe_dependencies_for_selective_recheck(tmp_path):

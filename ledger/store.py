@@ -65,6 +65,7 @@ class RunStore:
                     updated_at=now,
                 )
             )
+            session.flush()
             session.add(
                 RunEventRow(
                     run_id=run_id,
