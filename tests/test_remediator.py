@@ -118,6 +118,60 @@ def test_remediator_uses_git_changes_instead_of_model_reported_paths(tmp_path):
     assert result.change.changed_files == ["tasklane/jobs/purge_tenant.py"]
 
 
+def test_remediator_retries_once_when_agent_returns_no_git_diff(tmp_path):
+    class RetryCodingAgent(StubCodingAgent):
+        def __init__(self):
+            self.prompts = []
+
+        def implement(self, **kwargs) -> AgentChange:
+            self.prompts.append(kwargs["prompt"])
+            change = super().implement(**kwargs)
+            if len(self.prompts) == 1:
+                return change.model_copy(
+                    update={"changed_files": [], "summary": "No change required"}
+                )
+            return change
+
+    class RetryWorkspace(StubWorkspace):
+        def __init__(self, root: Path):
+            super().__init__(root)
+            self.change_checks = 0
+
+        def changed_files(self, worktree: Path) -> list[str]:
+            self.change_checks += 1
+            if self.change_checks == 1:
+                return []
+            return super().changed_files(worktree)
+
+    coding_agent = RetryCodingAgent()
+    workspace = RetryWorkspace(tmp_path)
+    agent = RemediationAgent(
+        coding_agent=coding_agent,
+        workspace=workspace,
+        pull_requests=StubPullRequests(),
+    )
+    cause = RootCause(
+        id="rc-p014-audit-events",
+        promise_id="P-014",
+        probe_ids=["P-014-static-purge"],
+        category="source_code",
+        file_path="tasklane/jobs/purge_tenant.py",
+        summary="The purge table list omits audit_events.",
+        fix_goal="Delete audit_events in the same tenant purge transaction.",
+    )
+
+    result = agent.remediate(
+        run_id="run-123",
+        root_cause=cause,
+        contract_text="Delete customer data within 30 days.",
+    )
+
+    assert result.change is not None
+    assert len(coding_agent.prompts) == 2
+    assert "made no Git changes" in coding_agent.prompts[1]
+    assert cause.file_path in coding_agent.prompts[1]
+
+
 def test_remediator_reuses_existing_open_pull_request_without_running_agent(tmp_path):
     existing = PullRequestRef(
         number=3,

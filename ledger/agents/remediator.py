@@ -71,12 +71,25 @@ class RemediationAgent:
             prompt=prompt,
         )
         actual_changed_files = self.workspace.changed_files(worktree)
+        if not actual_changed_files:
+            retry_prompt = (
+                f"{prompt}\n"
+                "The previous coding attempt made no Git changes. The verified violation "
+                f"still exists. Inspect and edit `{root_cause.file_path}` to implement the "
+                "stated fix goal, update the regression test, and verify the resulting diff."
+            )
+            change = self.coding_agent.implement(
+                worktree=worktree,
+                root_cause=root_cause,
+                prompt=retry_prompt,
+            )
+            actual_changed_files = self.workspace.changed_files(worktree)
         if root_cause.file_path not in actual_changed_files:
             reported = ", ".join(change.changed_files) or "none"
             actual = ", ".join(actual_changed_files) or "none"
             raise ValueError(
                 "coding agent did not modify the investigated file "
-                f"(reported: {reported}; git: {actual})"
+                f"(reported: {reported}; git: {actual}; summary: {change.summary})"
             )
         change = change.model_copy(update={"changed_files": actual_changed_files})
         commit_sha = self.workspace.commit_and_push(
