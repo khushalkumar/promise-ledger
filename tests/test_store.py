@@ -69,3 +69,8 @@ def test_run_store_persists_and_returns_latest_ledger_result(tmp_path):
     assert latest is not None
     assert latest[0] == "run-1"
     assert latest[1].reports[0].promise.id == "P-014"
+    resumed = RunStore(f"sqlite:///{tmp_path / 'state.db'}").ledger_result(
+        "run-1", phase="baseline"
+    )
+    assert resumed is not None
+    assert resumed.reports[0].promise.id == "P-014"

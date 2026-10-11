@@ -109,6 +109,9 @@
                   <div>
                     <code>{{ run.effective.probe_id }}</code>
                     <p>{{ run.effective.detail }}</p>
+                    {% if run.effective.trace_url %}
+                    <a href="{{ run.effective.trace_url }}" target="_blank" rel="noopener noreferrer">Open trace</a>
+                    {% endif %}
                     {% if run.fallback %}
                     <small>Recovered after {{ run.primary.detail }}</small>
                     {% endif %}

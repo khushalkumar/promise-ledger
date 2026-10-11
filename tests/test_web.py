@@ -37,7 +37,7 @@ def test_ledger_page_renders_verdict_evidence_and_conflicts(tmp_path):
                                     "outcome": "fail",
                                     "evidence_sha256": "abc123",
                                     "detail": "audit_events has 1284 rows past the deadline",
-                                    "trace_id": None,
+                                    "trace_id": "0123456789abcdef0123456789abcdef",
                                 },
                                 "fallback": None,
                             }
@@ -65,6 +65,11 @@ def test_ledger_page_renders_verdict_evidence_and_conflicts(tmp_path):
     assert "Northwind_DPA_v3.pdf" in response.text
     assert "audit_events has 1284 rows" in response.text
     assert "C-003" in response.text
+    assert (
+        'href="https://app.neatlogs.com/traces/0123456789abcdef0123456789abcdef"'
+        in response.text
+    )
+    assert "Open trace" in response.text
 
 
 def test_ledger_page_renders_latest_durable_run_without_json_file(tmp_path):

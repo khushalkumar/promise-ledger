@@ -18,7 +18,7 @@ from ledger.integrations.github import GhPullRequests
 from ledger.integrations.recheck import ConfiguredRechecker
 from ledger.integrations.workspace import GitWorkspace
 from ledger.llm import AzureJsonBackend
-from ledger.models import LedgerRun, Promise, RunMetrics
+from ledger.models import LedgerRun, Promise, RunMetrics, WorkflowStage
 from ledger.orchestrator import run_ledger
 from ledger.probes.executors import ProbeContext
 from ledger.registry import assign_canonical_ids, load_registry
@@ -135,32 +135,64 @@ def agent_run_command(
     ],
     worktree_root: Annotated[Path, typer.Option(file_okay=False)],
     output: Annotated[Path, typer.Option(dir_okay=False)],
+    run_id: Annotated[
+        str | None,
+        typer.Option(help="Stable run id to resume without repeating extraction and audit"),
+    ] = None,
 ) -> None:
     """Audit, remediate violations into real PRs, and recheck the combined commits."""
     tracing_enabled = initialize_tracing(os.getenv("NEATLOGS_API_KEY"))
     try:
+        store = RunStore(state_database)
+        if run_id is None:
+            timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+            run_id = f"pl-{timestamp}-{uuid4().hex[:8]}"
+        existing = store.get_run(run_id)
+        if existing is not None and existing.target_repository != repository:
+            raise ValueError(
+                f"run {run_id} belongs to {existing.target_repository}, not {repository}"
+            )
+        baseline = store.ledger_result(run_id, phase="baseline")
         backend = AzureJsonBackend.from_env()
-        extracted = _extract_documents(document, backend)
-        promises = assign_canonical_ids(extracted, load_registry(registry))
-        baseline = run_ledger(
-            promises,
-            ProbeContext(target_root=target, database=database),
-            compiler=lambda promise, assets: compile_checks_with_agent(
-                promise, assets, backend
-            ).probes,
-        )
-        usage = getattr(backend, "usage", None)
-        baseline.metrics = RunMetrics(
-            documents=len(document),
-            promises=len(promises),
-            llm_calls=getattr(usage, "calls", len(document) + len(promises)),
-            prompt_tokens=getattr(usage, "prompt_tokens", 0),
-            completion_tokens=getattr(usage, "completion_tokens", 0),
-            total_tokens=getattr(usage, "total_tokens", 0),
-        )
+        if baseline is None:
+            if existing is None:
+                store.create_run(run_id, target_repository=repository)
+            store.record_stage(
+                run_id,
+                WorkflowStage.EXTRACTING,
+                {"documents": [path.name for path in document]},
+            )
+            try:
+                extracted = _extract_documents(document, backend)
+                promises = assign_canonical_ids(extracted, load_registry(registry))
+                baseline = run_ledger(
+                    promises,
+                    ProbeContext(target_root=target, database=database),
+                    compiler=lambda promise, assets: compile_checks_with_agent(
+                        promise, assets, backend
+                    ).probes,
+                )
+                usage = getattr(backend, "usage", None)
+                baseline.metrics = RunMetrics(
+                    documents=len(document),
+                    promises=len(promises),
+                    llm_calls=getattr(usage, "calls", len(document) + len(promises)),
+                    prompt_tokens=getattr(usage, "prompt_tokens", 0),
+                    completion_tokens=getattr(usage, "completion_tokens", 0),
+                    total_tokens=getattr(usage, "total_tokens", 0),
+                )
+            except Exception as error:
+                store.record_stage(
+                    run_id,
+                    WorkflowStage.FAILED,
+                    {"error": f"{type(error).__name__}: {error}"},
+                )
+                raise
+        else:
+            typer.echo(f"Resuming {run_id} from its durable baseline")
 
         workflow = AutonomousWorkflow(
-            store=RunStore(state_database),
+            store=store,
             investigator=EvidenceInvestigator(target, backend),
             remediator=RemediationAgent(
                 coding_agent=CodexCodingAgent(binary=os.getenv("CODEX_BINARY", "codex")),
@@ -169,8 +201,6 @@ def agent_run_command(
             ),
             rechecker=ConfiguredRechecker(target, worktree_root / "rechecks"),
         )
-        timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-        run_id = f"pl-{timestamp}-{uuid4().hex[:8]}"
         result = workflow.remediate(
             run_id=run_id,
             target_repository=repository,
@@ -191,11 +221,22 @@ def agent_run_command(
 @app.command("bench")
 def bench_command(
     run: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
+    target: Annotated[Path, typer.Option(exists=True, file_okay=False)],
+    database: Annotated[
+        str,
+        typer.Option(help="SQLite path or SQLAlchemy PostgreSQL URL"),
+    ],
     output: Annotated[Path, typer.Option(dir_okay=False)],
 ) -> None:
+    """Run independent free-form v1 and grounded v2 LLM benchmarks."""
     tracing_enabled = initialize_tracing(os.getenv("NEATLOGS_API_KEY"))
     try:
-        benchmark = compare_compilers(LedgerRun.model_validate_json(run.read_text()))
+        benchmark = compare_compilers(
+            LedgerRun.model_validate_json(run.read_text()),
+            ProbeContext(target_root=target, database=database),
+            v1_backend=AzureJsonBackend.from_env(),
+            v2_backend=AzureJsonBackend.from_env(),
+        )
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(benchmark.model_dump_json(indent=2) + "\n")
         typer.echo(

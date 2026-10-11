@@ -11,6 +11,7 @@ from sqlalchemy import text
 
 from ledger.database import create_database_engine, database_url
 from ledger.models import Probe, ProbeOutcome
+from ledger.probes.runner import ProbeExecution
 
 
 @dataclass(frozen=True)
@@ -19,24 +20,43 @@ class ProbeContext:
     database: str | Path
 
 
-def execute_probe(probe: Probe, context: ProbeContext) -> tuple[ProbeOutcome, str]:
+def execute_probe(probe: Probe, context: ProbeContext) -> ProbeExecution:
+    result: tuple[ProbeOutcome, str]
     if probe.template == "sql.no_rows_after_deadline":
-        return _no_rows_after_deadline(probe, context)
-    if probe.template == "static.purge_covers_tables":
-        return _purge_covers_tables(probe, context)
-    if probe.template == "terraform.maximum_retention":
-        return _maximum_retention(probe, context)
-    if probe.template == "terraform.allowed_regions":
-        return _allowed_regions(probe, context)
-    if probe.template == "terraform.attribute_equals":
-        return _terraform_attribute_equals(probe, context)
-    if probe.template == "json.value_equals":
-        return _json_value_equals(probe, context)
-    if probe.template == "json.value_at_least":
-        return _json_value_at_least(probe, context)
-    if probe.template == "cloud.backup_retention":
-        return _cloud_backup_retention(probe)
-    raise ValueError(f"unsupported probe template: {probe.template}")
+        result = _no_rows_after_deadline(probe, context)
+    elif probe.template == "static.purge_covers_tables":
+        result = _purge_covers_tables(probe, context)
+    elif probe.template == "terraform.maximum_retention":
+        result = _maximum_retention(probe, context)
+    elif probe.template == "terraform.allowed_regions":
+        result = _allowed_regions(probe, context)
+    elif probe.template == "terraform.attribute_equals":
+        result = _terraform_attribute_equals(probe, context)
+    elif probe.template == "json.value_equals":
+        result = _json_value_equals(probe, context)
+    elif probe.template == "json.value_at_least":
+        result = _json_value_at_least(probe, context)
+    elif probe.template == "cloud.backup_retention":
+        result = _cloud_backup_retention(probe)
+    else:
+        raise ValueError(f"unsupported probe template: {probe.template}")
+    outcome, detail = result
+    return ProbeExecution(
+        outcome=outcome,
+        detail=detail,
+        evidence_material=_evidence_material(probe, context, detail),
+    )
+
+
+def _evidence_material(probe: Probe, context: ProbeContext, detail: str) -> bytes:
+    material = [
+        json.dumps(probe.model_dump(mode="json"), sort_keys=True).encode(),
+        detail.encode(),
+    ]
+    relative_path = probe.params.get("path")
+    if isinstance(relative_path, str):
+        material.append(_target_path(context.target_root, relative_path).read_bytes())
+    return b"\0".join(material)
 
 
 def _no_rows_after_deadline(

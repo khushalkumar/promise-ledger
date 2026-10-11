@@ -182,3 +182,15 @@ class RunStore:
         if row is None:
             return None
         return row.run_id, LedgerRun.model_validate(row.payload)
+
+    def ledger_result(self, run_id: str, *, phase: str) -> LedgerRun | None:
+        if phase not in {"baseline", "final"}:
+            raise ValueError(f"unsupported ledger result phase: {phase}")
+        with Session(self.engine) as session:
+            row = session.exec(
+                select(LedgerResultRow)
+                .where(LedgerResultRow.run_id == run_id)
+                .where(LedgerResultRow.phase == phase)
+                .order_by(LedgerResultRow.id.desc())
+            ).first()
+        return None if row is None else LedgerRun.model_validate(row.payload)

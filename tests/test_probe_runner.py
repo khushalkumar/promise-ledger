@@ -1,6 +1,6 @@
 from ledger.models import Probe, ProbeKind, ProbeOutcome
 from ledger.probes import runner
-from ledger.probes.runner import run_probe
+from ledger.probes.runner import ProbeExecution, run_probe
 
 
 def probe(*, fallback: Probe | None = None) -> Probe:
@@ -35,7 +35,7 @@ def test_error_runs_fallback_and_uses_its_pass_result():
 
     execution = run_probe(probe(fallback=terraform_fallback()), executor)
 
-    assert calls == ["P-017-cloud", "P-017-terraform"]
+    assert calls == ["P-017-cloud", "P-017-cloud", "P-017-terraform"]
     assert execution.primary.outcome is ProbeOutcome.ERROR
     assert execution.primary.detail == "PermissionError: AccessDenied"
     assert execution.fallback is not None
@@ -65,6 +65,64 @@ def test_evidence_hash_is_deterministic():
 
     assert first.primary.evidence_sha256 == second.primary.evidence_sha256
     assert len(first.primary.evidence_sha256) == 64
+
+
+def test_evidence_hash_tracks_the_underlying_artifact_not_only_display_detail():
+    first = run_probe(
+        probe(),
+        lambda current: ProbeExecution(
+            outcome=ProbeOutcome.PASS,
+            detail="stable evidence",
+            evidence_material=b"artifact revision one",
+        ),
+    )
+    second = run_probe(
+        probe(),
+        lambda current: ProbeExecution(
+            outcome=ProbeOutcome.PASS,
+            detail="stable evidence",
+            evidence_material=b"artifact revision two",
+        ),
+    )
+
+    assert first.primary.evidence_sha256 != second.primary.evidence_sha256
+
+
+def test_transient_probe_error_is_retried_before_fallback():
+    calls = 0
+
+    def executor(current: Probe):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise ConnectionError("temporary database interruption")
+        return ProbeOutcome.PASS, "query recovered"
+
+    execution = run_probe(probe(fallback=terraform_fallback()), executor)
+
+    assert calls == 2
+    assert execution.primary.outcome is ProbeOutcome.PASS
+    assert execution.fallback is None
+
+
+def test_probe_timeout_becomes_error_and_uses_fallback():
+    import time
+
+    def executor(current: Probe):
+        if current.id == "P-017-cloud":
+            time.sleep(0.05)
+        return ProbeOutcome.PASS, "fallback evidence"
+
+    execution = run_probe(
+        probe(fallback=terraform_fallback()),
+        executor,
+        timeout_seconds=0.001,
+    )
+
+    assert execution.primary.outcome is ProbeOutcome.ERROR
+    assert "timed out" in execution.primary.detail
+    assert execution.fallback is not None
+    assert execution.fallback.outcome is ProbeOutcome.PASS
 
 
 def test_probe_evidence_keeps_the_active_neatlogs_trace_id(monkeypatch):
