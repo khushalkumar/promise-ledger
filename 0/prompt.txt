@@ -1,0 +1,1 @@
+Edit evidence/entire.md only. Replace the Checkpoint boundary paragraph so it truthfully says the seven Codex hooks were reviewed and approved on October 11, 2026, the warning is gone, and this post-approval session is being used to produce the final checkpoint evidence. Do not claim a checkpoint ID yet. Do not commit or push. Run a focused diff check and report the changed file.
