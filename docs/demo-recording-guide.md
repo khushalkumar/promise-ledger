@@ -1,209 +1,229 @@
 # Promise Ledger demo recording guide
 
-This guide assumes you have never seen the project before. You do not need to run code, use a terminal, or understand JSON while recording. The demo is a guided tour of already verified evidence.
+This guide assumes you have never seen the project before. You do not need to understand the code, JSON, credentials, or terminal setup. Before recording, I will prepare the browser tabs, local pages, and a Terminal window containing one safe command. During the recording, you press **Enter once** to run the real audit.
 
-## 1. What you are demonstrating
+The demo is not a slideshow of old results. It contains one real end-to-end Promise Ledger execution. Saved traces and before/after results support that live execution.
 
-Promise Ledger reads agreements, converts their clauses into named promises, checks those promises against a fictional SaaS called Tasklane, and preserves the evidence for each verdict.
+## 1. What the hackathon requires
 
-The main example is `P-014`. `P-014` is an internal label, not a priority or ticket number. It represents this clause from the fictional Northwind contract:
+The live [neatHack page](https://neatlogs.com/hackathon) says the project must complete a substantial task from start to finish. The three-minute-or-shorter video must explicitly cover neatlogs, Entire, and cfo.ai, including architecture, implementation, runtime, reasoning, and result.
+
+Our video therefore contains:
+
+1. A real Promise Ledger audit started during the recording.
+2. The resulting contractual verdicts.
+3. A Neatlogs runtime trace and recovery path.
+4. Entire Graph locating relevant implementation code.
+5. Proposed fixes and a verified after-fix audit.
+6. The cfo.ai business model and result.
+
+## 2. What Promise Ledger does
+
+Promise Ledger reads agreements, converts their clauses into named promises, checks those promises against a fictional SaaS called Tasklane, and preserves the evidence for every verdict.
+
+The main example is `P-014`. `P-014` is an internal promise ID, not a priority or ticket number. It represents this clause from the fictional Northwind contract:
 
 > Tasklane will delete Northwind's customer personal data within 30 days, including application records, audit events, exports, attachments, and backups.
 
-The original audit marks `P-014` as **violated**. The proposed fixes make it **hold** in an isolated verification run.
+The original audit marks `P-014` as **violated**. Applying the two proposed fixes in an isolated checkout makes it **hold**.
 
-## 2. Where everything is
+## 3. What is live and what is saved
 
-### Screens used in the recording
+### Live during the video
+
+- You press **Enter** in the prepared Terminal window.
+- Promise Ledger reads the three documents, extracts nine promises, inventories Tasklane, runs code/database/Terraform checks, calculates verdicts, and sends runtime spans to Neatlogs.
+- The Terminal prints the nine verdicts when the run finishes.
+- We show the audit result and Neatlogs runtime.
+
+The live audit normally takes approximately 15–30 seconds. Do not type any credentials. They will already be loaded outside the visible command.
+
+### Saved supporting evidence
+
+- The previously verified baseline protects us if a live external service is slow.
+- The remediated audit proves the two proposed fixes.
+- The compiler benchmark proves the grounded compiler improved over the naïve version.
+- The Entire checkpoint proves AI-assisted work was captured during the hackathon.
+- The cfo.ai workbook and business plan preserve the financial result.
+
+## 4. Where everything is
 
 | What | Where to open it | What you should see |
 | --- | --- | --- |
 | Northwind demo contract | [`contracts/Northwind_DPA_v3.pdf`](../contracts/Northwind_DPA_v3.pdf) | A one-page PDF titled **Northwind Data Processing Addendum**. Section 7.2 contains the 30-day deletion promise. |
-| Original audit UI | <http://127.0.0.1:8000> | Promise Ledger page. The top says **Every promise gets a chain of proof**. `P-014` is red and says **VIOLATED**. |
-| Original Neatlogs trace | [Trace `279e...c551`](https://app.neatlogs.com/traces/279e6c54faac9ee0a38d05177481c551?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | The `ledger_run` trace with 37 spans. Use it to show the recorded workflow and the P-017 fallback. |
-| Tasklane fix 1 | [Tasklane PR #1](https://github.com/khushalkumar/tasklane-demo/pull/1) | A small code change adding `audit_events` to the deletion job. |
-| Tasklane fix 2 | [Tasklane PR #2](https://github.com/khushalkumar/tasklane-demo/pull/2) | A Terraform change reducing backup expiry from 90 days to 30 days. |
-| Fixed-result UI | <http://127.0.0.1:8001> | The same Promise Ledger page using the isolated remediated result. `P-014` is green and says **HOLDS**. |
-| Benchmark trace | [Trace `2940...3f0b`](https://app.neatlogs.com/traces/2940581bcb8fa85fec385f6f9a823f0b?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | The compiler benchmark. The important result is v1: 3 mismatches; v2: 0 mismatches. |
-| Benchmark backup | [`evidence/benchmark.md`](../evidence/benchmark.md) | The same benchmark in a simple table if the Neatlogs page is slow. |
-| Entire evidence | [`evidence/entire.md`](../evidence/entire.md) | Shows that Entire Graph found `purge_expired_tenants` in `tasklane/jobs/purge_tenant.py`. |
-| cfo.ai model | [Promise Ledger scenario page](https://app.cfo.ai/outgoing-sheep-2dce4103/chat/ff58a708-efba-45ab-adce-dcf04fd52383?pageId=e21c5cbf-b709-43da-a9cd-9c7be1769de2&panel=page&scenario=9e525b60-f4d7-4c9f-aef4-6101c66d1453) | The Downside, Base, and Growth financial scenarios. |
-| cfo.ai backup image | [`evidence/cfo_scenario_model.png`](../evidence/cfo_scenario_model.png) | A static image of the scenario table if the live cfo.ai page is slow. |
-| Business plan | [`docs/business_plan.pdf`](business_plan.pdf) | A four-page PDF titled **Promise Ledger - Business Plan**. |
+| Prepared live-run Terminal | I will open this immediately before recording | One command waiting at the prompt. You press **Enter once**. No credential values will be visible. |
+| Baseline audit UI | <http://127.0.0.1:8000> | Promise Ledger page. `P-014` is red and says **VIOLATED**. This is also the fallback if the live run is delayed. |
+| Live result UI | <http://127.0.0.1:8002> | The result created while recording. I will prepare this address to display the new run after it finishes. |
+| Neatlogs trace list | [Promise Ledger traces](https://app.neatlogs.com/traces?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | The newest Promise Ledger run should appear first after refreshing. |
+| Verified Neatlogs fallback | [Trace `279e...c551`](https://app.neatlogs.com/traces/279e6c54faac9ee0a38d05177481c551?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | A 37-span run showing workflow, agents, tools, guardrails, input, and output. Use this if the fresh trace has not appeared yet. |
+| Tasklane fix 1 | [Tasklane PR #1](https://github.com/khushalkumar/tasklane-demo/pull/1) | Adds `audit_events` to the deletion job. |
+| Tasklane fix 2 | [Tasklane PR #2](https://github.com/khushalkumar/tasklane-demo/pull/2) | Changes backup expiry from 90 days to 30 days. |
+| Fixed-result UI | <http://127.0.0.1:8001> | The isolated after-fix result. `P-014` is green and says **HOLDS**. |
+| Benchmark trace | [Trace `2940...3f0b`](https://app.neatlogs.com/traces/2940581bcb8fa85fec385f6f9a823f0b?orgId=5d26aec1-b6b1-4572-b322-3f0ad165c998&projectId=61db443d-602a-484c-9136-1ae03eb5ae03) | Compiler v1 has 3 mismatches; v2 has 0. |
+| Benchmark backup | [`evidence/benchmark.md`](../evidence/benchmark.md) | The same comparison as a simple table. |
+| Entire evidence | [`evidence/entire.md`](../evidence/entire.md) | Entire Graph finds `purge_expired_tenants` in `tasklane/jobs/purge_tenant.py`; the checkpoint ID is also recorded. |
+| cfo.ai model | [Promise Ledger scenario page](https://app.cfo.ai/outgoing-sheep-2dce4103/chat/ff58a708-efba-45ab-adce-dcf04fd52383?pageId=e21c5cbf-b709-43da-a9cd-9c7be1769de2&panel=page&scenario=9e525b60-f4d7-4c9f-aef4-6101c66d1453) | Downside, Base, and Growth financial scenarios. |
+| cfo.ai backup image | [`evidence/cfo_scenario_model.png`](../evidence/cfo_scenario_model.png) | Static scenario table if the live page is slow. |
+| Business plan | [`docs/business_plan.pdf`](business_plan.pdf) | Four-page **Promise Ledger - Business Plan**. |
 
-The two `127.0.0.1` addresses are pages served from this Mac. They are not public websites. I will confirm both are running before recording.
+The `127.0.0.1` addresses are pages running on this Mac, not public websites. I will confirm all three addresses before recording.
 
-## 3. What the original audit page means
-
-The original audit page at <http://127.0.0.1:8000> is a read-only visual report. There are no buttons to press. You only scroll.
+## 5. What the audit page means
 
 At the top:
 
-- **Red signals: 3** means two violated system promises plus one conflict between documents.
+- **Red signals: 3** means two violated system promises plus one document conflict.
 - **Promises: 9** means nine contractual obligations were extracted.
 - **Source documents: 3** means two generated contracts and one policy were checked.
-- **Unverifiable: 1** means one promise did not have an authoritative evidence source. The system refuses to invent a pass or failure.
+- **Unverifiable: 1** means one promise lacked an authoritative evidence source. The system refused to invent a pass or failure.
 
-Important cards:
+Important promise cards:
 
-- `P-014` — deletion within 30 days. Red because deletion code, old database rows, and backup retention disagree with the promise.
-- `P-017` — database snapshot retention. Green because a failed cloud check safely falls back to Terraform evidence.
-- `P-021` — EU data residency. Red because the system is configured for `us-east-1`, not the promised `eu-west-1`.
-- `P-031` — subprocessor notice. Unverifiable because no authoritative source exists.
+- `P-014` — deletion within 30 days. Red because deletion code omits a table, expired rows remain, and backup retention is 90 rather than 30 days.
+- `P-017` — database snapshot retention. Green because a cloud permission failure safely falls back to Terraform evidence.
+- `P-021` — EU data residency. Red because the system uses `us-east-1`, not the promised `eu-west-1`.
+- `P-031` — subprocessor notice. Unverifiable because no authoritative evidence source exists.
 
-## 4. Before recording
+## 6. Before recording
 
-### Prepare the browser
+Do not start recording until I confirm: **“The live-run Terminal and all demo tabs are ready.”**
 
-Open the items from section 2 in this order:
+I will prepare these tabs in order:
 
 1. Northwind contract PDF.
-2. Original audit UI (`8000`).
-3. Original Neatlogs trace.
-4. Tasklane PR #1.
-5. Tasklane PR #2.
-6. Fixed-result UI (`8001`).
-7. Benchmark trace or benchmark Markdown backup.
-8. Entire evidence.
-9. cfo.ai scenario model or its backup image.
-10. Business-plan PDF.
+2. Prepared live-run Terminal.
+3. Live result UI (`8002`).
+4. Baseline audit UI (`8000`) as a fallback.
+5. Neatlogs trace list and verified trace.
+6. Entire evidence.
+7. Tasklane PR #1.
+8. Tasklane PR #2.
+9. Fixed-result UI (`8001`).
+10. cfo.ai scenario model and backup image.
+11. Business-plan PDF.
 
-Close unrelated tabs and hide bookmarks, notifications, email, Slack, and anything containing credentials. Keep the GitHub PRs unmerged.
+I will also run one rehearsal before the final take. The rehearsal verifies execution time, the live result page, and trace delivery. It is not the submitted recording.
 
-### Start macOS screen recording
+Close unrelated tabs and hide bookmarks, notifications, email, Slack, and anything containing credentials. Keep both Tasklane pull requests unmerged.
+
+### Start macOS recording
 
 1. Press `Shift-Command-5`.
 2. Select **Record Entire Screen**.
 3. Click **Options**.
 4. Under **Microphone**, select the microphone you will speak into.
-5. Under **Save to**, select Desktop or another folder you can find easily.
-6. Turn off **Show Mouse Clicks** unless you want the click circles visible.
+5. Under **Save to**, select Desktop or another known folder.
+6. Turn off **Show Mouse Clicks** unless you want click circles.
 7. Click **Record**.
 8. Wait two seconds before speaking.
 
-Use normal browser zoom, usually 100%. Move the pointer away from text after switching tabs.
+## 7. The six scenes, click by click
 
-## 5. The six scenes, click by click
+### Scene 1 — Goal and contract — 0:00 to 0:15
 
-### Scene 1 — The contractual promise — 0:00 to 0:20
+**Open:** `contracts/Northwind_DPA_v3.pdf`.
 
-**Open:** the Northwind contract PDF.
-
-**Place on screen:** the whole one-page PDF. Section **7.2 Deletion and backup retention** should be readable. If necessary, zoom until section 7.2 is visible.
-
-**Action:** pause on section 7.2 for about five seconds, then switch to the original audit UI at `http://127.0.0.1:8000` and remain at the top.
+**Show:** section **7.2 Deletion and backup retention**.
 
 **Say:**
 
-> Contracts promise outcomes, but the evidence lives across code, data, infrastructure, and policies. Promise Ledger turns each clause into a chain of proof. This fictional DPA requires Tasklane to delete customer data and backups within 30 days.
+> Promise Ledger is an agent that turns contractual promises into checks against code, data, and infrastructure. This fictional contract requires Tasklane to delete customer data and backups within 30 days.
 
-### Scene 2 — The original audit — 0:20 to 1:05
+### Scene 2 — Run the agent live — 0:15 to 0:45
 
-**Open:** original audit UI at `http://127.0.0.1:8000`.
+**Open:** the prepared Terminal.
+
+**Action:** press **Enter once**. Do not type anything else. The command will visibly name the three contract or policy files and the Tasklane target. Wait for the verdict list.
+
+**Expected output:** nine rows such as `P-014 violated`, `P-017 holds`, and `P-031 unverifiable`, followed by the document conflict.
+
+**Say while it runs:**
+
+> This is a real audit. The agent reads three documents, assigns stable promise IDs, inventories the Tasklane repository and database, compiles grounded checks, executes them, handles fallbacks, and calculates the verdicts. The same run is being traced in Neatlogs.
+
+If it takes longer than 30 seconds, stop waiting and switch to the baseline UI at `8000`. The saved trace remains valid evidence; do not leave a blank Terminal on screen.
+
+### Scene 3 — Reasoning and result — 0:45 to 1:15
+
+**Open:** the live result UI at `8002`. If it is not ready, use baseline UI `8000`.
 
 **Action:**
 
-1. Pause on the four summary numbers at the top.
-2. Scroll slowly until the red `P-014` card fills most of the screen.
-3. Pause on the `audit_events has 1284 row(s)` line.
-4. Continue down just enough to show `P-021` and `P-031`.
+1. Show the four summary numbers.
+2. Scroll to red `P-014`.
+3. Pause on `audit_events has 1284 row(s)` and `configured retention is 90 days; contract maximum is 30`.
+4. Move to green `P-017` and show `Recovered after PermissionError: AccessDenied`.
 
 **Say:**
 
-> This audit checked three documents and created nine promises. P-014 is the deletion promise. The deletion job omits audit events, the database contains 1,284 expired audit-event rows, and the configured backup period is too long. Residency is also violated because the system uses us-east-1. The subprocessor promise is marked unverifiable because there is no authoritative source; Promise Ledger does not fabricate a pass.
+> P-014 fails across code, data, and configuration: the deletion job omits audit events, 1,284 expired audit-event rows remain, and backup retention is 90 days instead of 30. P-017 demonstrates recovery. AccessDenied is recorded as a tool error, then the declared Terraform fallback proves compliant retention, so the verdict holds.
 
-### Scene 3 — Safe recovery from tool failure — 1:05 to 1:35
+### Scene 4 — neatlogs and Entire runtime — 1:15 to 1:50
 
-**Start on:** the green `P-017` card on the original audit UI.
+**Open:** the Neatlogs trace list, refresh, and select the newest Promise Ledger run. If it has not appeared, use verified trace `279e...c551`.
 
-**Point out:**
+**Show:** the `ledger_run` workflow and its nested agent, tool, and guardrail spans.
 
-- `P-017` says **HOLDS**.
-- The evidence line says `Recovered after PermissionError: AccessDenied`.
-- The effective evidence says configured retention is 30 days.
-
-**Then switch to:** the original Neatlogs trace.
-
-**Action in Neatlogs:** show the trace overview and the span list. If finding an individual fallback span takes too long, keep the overview visible; do not waste recording time searching.
+**Then open:** `evidence/entire.md` and pause on `purge_expired_tenants`.
 
 **Say:**
 
-> The primary cloud snapshot check returned AccessDenied. That is a tool error, not proof of a contract violation. Promise Ledger records the error and follows the probe's declared Terraform fallback. Terraform proves 30-day retention, so the final verdict holds. Neatlogs preserves that execution path.
+> The implementation wraps the audit as a Neatlogs workflow with extraction and compilation agents, inventory and probe tools, and verdict guardrails. The runtime preserves inputs, outputs, latency, tokens, failures, and fallback reasoning. During inventory, Entire Graph searches repository context and finds the exact purge function responsible for deletion. Entire also preserves the AI-change checkpoint behind the implementation.
 
-### Scene 4 — Fix and verify — 1:35 to 2:10
+This explicitly covers neatlogs architecture, implementation, runtime, reasoning, and result, plus Entire implementation and runtime result.
 
-**Open in sequence:**
+### Scene 5 — Fix and verify — 1:50 to 2:25
 
-1. Tasklane PR #1.
-2. Tasklane PR #2.
-3. Fixed-result UI at `http://127.0.0.1:8001`.
+**Open in sequence:** Tasklane PR #1, PR #2, then fixed-result UI `8001`.
 
 **Action:**
 
-1. On PR #1, show the title and the changed code adding `audit_events`. Do not review every line.
-2. On PR #2, show the title and the Terraform value changing from 90 to 30.
-3. On the fixed-result UI, scroll to `P-014` and pause on the green **HOLDS** label and the passing evidence rows.
-4. Briefly show that `P-021` is still red and `P-031` is still unverifiable.
+1. On PR #1, show the title and `audit_events` added to deletion.
+2. On PR #2, show backup expiry changing from 90 to 30.
+3. On `8001`, show green `P-014` and its passing checks.
+4. Briefly show that `P-021` remains red and `P-031` remains unverifiable.
 
 **Say:**
 
-> The two independent causes become two small pull requests. The first includes audit events in tenant deletion. The second caps backup expiry at 30 days. We applied both in an isolated checkout, reran the purge and checks, and P-014 turned green. Residency and missing subprocessor evidence stayed unresolved, proving the re-check did not hide other failures.
+> The agent's findings become two small reviewable pull requests. One fixes tenant deletion; the other caps backup expiry. Applying both in an isolated checkout turns only P-014 green. Residency and missing subprocessor evidence remain unresolved, proving the re-check did not hide unrelated failures.
 
-### Scene 5 — Agent reliability — 2:10 to 2:35
+### Scene 6 — cfo.ai and conclusion — 2:25 to 3:00
 
-**Open:** benchmark Neatlogs trace. If it is slow, open `evidence/benchmark.md` instead.
+**Open:** the cfo.ai scenario model. Use `evidence/cfo_scenario_model.png` if the page is slow.
 
-**Show:** v1 has 3 mismatches and v2 has 0.
+**Show:** the Base scenario: 200 monitored contracts, `$39` monthly price, and approximately `75.84%` gross margin.
 
-**Then open:** `evidence/entire.md` and pause on the table row for `purge_expired_tenants`.
-
-**Say:**
-
-> A naive compiler mislabels three of ten seeded cases. It mistakes missing evidence for success and treats an access error as a violation. The grounded compiler makes zero of those mistakes. Entire Graph also finds the exact purge function from the contract language, rather than relying on a hard-coded file list.
-
-### Scene 6 — Business viability — 2:35 to 3:00
-
-**Open:** cfo.ai scenario model. If it is slow, show `evidence/cfo_scenario_model.png`.
-
-**Point out:** the Base scenario and its approximately 76% gross margin.
-
-**Then open:** the first page of `docs/business_plan.pdf` for two or three seconds.
-
-**Finish on:** the top of the original audit UI, showing **Every promise gets a chain of proof**.
+**Then show:** the first page of `docs/business_plan.pdf` for two seconds and finish at the top of the Promise Ledger UI.
 
 **Say:**
 
-> The audit used about 3.8 thousand tokens across three model calls, roughly 1.7 cents under the model-price assumption. The base scenario prices monitored contracts at 39 dollars per month and reaches about 76 percent gross margin. Promise Ledger makes contract truth testable, fixable, and economically practical. Every promise gets a chain of proof.
+> cfo.ai turns measured runtime usage—about 3.8 thousand tokens and roughly 1.7 cents per audit—into pricing, revenue, cost, margin, and runway scenarios. The base model prices monitoring at 39 dollars per contract per month and reaches about 76 percent gross margin. That model and the resulting business plan are included in the repository. Promise Ledger makes contract truth testable, fixable, and economically practical. Every promise gets a chain of proof.
 
 Wait one second, then stop recording from the macOS menu-bar stop button.
 
-## 6. Do we run the audit during recording?
+## 8. If something fails during recording
 
-No. The video shows completed, verified runs.
+- **Live audit exceeds 30 seconds:** switch to `8000` and continue. Do not restart it on camera.
+- **Live result page `8002` is unavailable:** use baseline `8000`.
+- **Fresh Neatlogs trace is delayed:** use verified trace `279e...c551`.
+- **Neatlogs itself is slow:** show the local `P-017` recovery result and `evidence/benchmark.md`.
+- **cfo.ai is slow or logged out:** use `evidence/cfo_scenario_model.png`.
+- **GitHub asks for sign-in:** use the Chrome profile already signed into `khushalkumar`.
+- **Any secret appears:** stop recording immediately and discard that take.
 
-- `run_live_audit.json` is the original failing audit used by the UI on port `8000`.
-- `run_remediated.json` is the isolated after-fix verification used by the UI on port `8001`.
-- Neatlogs contains the original audit and benchmark traces.
-- The two pull requests remain open and unmerged.
+The fallback material is supporting evidence, but every final take should begin with the real live audit attempt.
 
-We may perform one fresh audit **before** recording to confirm reproducibility, but that is preparation I will handle. It should not appear in the three-minute video because model calls and network dashboards can be slow or fail unpredictably.
+## 9. After recording
 
-## 7. If something does not open
+Play the entire video once and confirm:
 
-- If `8000` or `8001` fails: tell me which address failed. I will restart it; you do not need to use Terminal.
-- If Neatlogs is slow: use `evidence/benchmark.md` for the benchmark and keep `P-017` visible in the local UI for recovery proof.
-- If cfo.ai is slow or logged out: use `evidence/cfo_scenario_model.png`.
-- If a GitHub PR asks you to sign in: use the Chrome profile already signed into `khushalkumar`.
-- Never enter or display API keys during recording.
-
-## 8. After recording
-
-Play the video once and confirm:
-
+- the live audit command is visibly started;
+- the Terminal shows real verdict output or the 30-second fallback transition is clear;
 - your voice is audible;
-- no notification or secret appeared;
+- no credentials, notifications, or private unrelated information appear;
+- neatlogs, Entire, and cfo.ai are each explicitly explained;
 - `P-014` is visibly red before the fixes and green afterward;
-- the video is close to three minutes;
+- the duration is three minutes or less;
 - the final frame says **Every promise gets a chain of proof**.
 
-Do not publish the video, repositories, or X posts until the final submission switch is explicitly approved.
+Do not publish the video, repositories, or X post until the final submission switch is explicitly approved.
