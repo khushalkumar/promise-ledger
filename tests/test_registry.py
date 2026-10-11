@@ -52,6 +52,29 @@ def test_registry_rejects_an_unrecognized_extraction():
         assign_canonical_ids([extracted], {})
 
 
+def test_registry_uses_unique_clause_candidate_when_model_kind_drifts():
+    extracted = Promise.model_validate(
+        {
+            "id": "P-001",
+            "kind": "deletion_deadline",
+            "actor": "Tasklane",
+            "object": "customer personal data and backups",
+            "deadline_days": 90,
+            "source": {
+                "document": "privacy_policy.md",
+                "clause": "5. Data retention",
+                "text": "may retain customer personal data and backups for up to 90 days",
+            },
+        }
+    )
+    registry = {"privacy_policy.md|5|retention_limit": "P-044"}
+
+    assigned = assign_canonical_ids([extracted], registry)
+
+    assert assigned[0].id == "P-044"
+    assert assigned[0].kind.value == "retention_limit"
+
+
 def test_registry_merges_split_extractions_from_the_same_clause():
     items = [
         Promise.model_validate(

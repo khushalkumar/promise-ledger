@@ -5,7 +5,7 @@ import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from ledger.models import Promise
+from ledger.models import Promise, PromiseKind
 
 
 def load_registry(path: Path) -> dict[str, str]:
@@ -23,7 +23,7 @@ def assign_canonical_ids(
 ) -> list[Promise]:
     deduplicated: dict[str, Promise] = {}
     for promise in promises:
-        key = _registry_key(promise)
+        key, promise = _canonical_registry_entry(promise, registry)
         if key in deduplicated:
             deduplicated[key] = _merge_same_clause(deduplicated[key], promise)
         else:
@@ -40,6 +40,25 @@ def assign_canonical_ids(
         used_ids.add(canonical_id)
         assigned.append(promise.model_copy(update={"id": canonical_id}))
     return assigned
+
+
+def _canonical_registry_entry(
+    promise: Promise,
+    registry: Mapping[str, str],
+) -> tuple[str, Promise]:
+    key = _registry_key(promise)
+    if key in registry:
+        return key, promise
+
+    document, clause, _ = key.rsplit("|", 2)
+    prefix = f"{document}|{clause}|"
+    candidates = [candidate for candidate in registry if candidate.startswith(prefix)]
+    if len(candidates) != 1:
+        return key, promise
+
+    candidate = candidates[0]
+    canonical_kind = PromiseKind(candidate.rsplit("|", 1)[1])
+    return candidate, promise.model_copy(update={"kind": canonical_kind})
 
 
 def _merge_same_clause(left: Promise, right: Promise) -> Promise:
