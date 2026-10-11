@@ -5,6 +5,7 @@ from typing import Annotated
 
 import typer
 
+from ledger.agents.compiler_agent import compile_checks_with_agent
 from ledger.agents.extractor import extract_promises
 from ledger.benchmark import compare_compilers
 from ledger.documents import load_document
@@ -76,7 +77,13 @@ def audit_command(
         backend = AzureJsonBackend.from_env()
         extracted = _extract_documents(document, backend)
         promises = assign_canonical_ids(extracted, load_registry(registry))
-        ledger_run = run_ledger(promises, ProbeContext(target_root=target, database=database))
+        ledger_run = run_ledger(
+            promises,
+            ProbeContext(target_root=target, database=database),
+            compiler=lambda promise, assets: compile_checks_with_agent(
+                promise, assets, backend
+            ).probes,
+        )
         usage = getattr(backend, "usage", None)
         ledger_run.metrics = RunMetrics(
             documents=len(document),

@@ -141,6 +141,16 @@ def test_audit_command_extracts_assigns_and_verifies_in_one_run(tmp_path, monkey
 
     class StubBackend:
         def complete_json(self, system: str, user: str) -> str:
+            if "safe candidate probes" in system:
+                request = json.loads(user)
+                return json.dumps(
+                    {
+                        "selected_probe_ids": [
+                            probe["id"] for probe in request["safe_candidate_probes"]
+                        ],
+                        "grounding_notes": "All grounded checks are required.",
+                    }
+                )
             return json.dumps(
                 {
                     "promises": [

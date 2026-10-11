@@ -1,6 +1,7 @@
 import json
+import subprocess
 
-from ledger.agents.investigator import investigate_violation
+from ledger.agents.investigator import EvidenceInvestigator, investigate_violation
 from ledger.models import (
     Probe,
     ProbeKind,
@@ -64,6 +65,42 @@ def test_investigator_turns_failed_evidence_into_two_actionable_root_causes(tmp_
     ]
     assert result[0].probe_ids == ["P-014-static-purge", "P-014-data-audit_events"]
     assert result[1].fix_goal == "Cap backup expiry at 30 days."
+
+
+def test_evidence_investigator_collects_entire_impact_and_git_history(tmp_path):
+    outputs = iter(
+        [
+            json.dumps(
+                {
+                    "results": [
+                        {
+                            "symbol_name": "purge_expired_tenants",
+                            "file_path": "tasklane/jobs/purge_tenant.py",
+                            "start_line": 15,
+                            "end_line": 36,
+                        }
+                    ]
+                }
+            ),
+            json.dumps({"symbol": "purge_expired_tenants", "callers": ["tasklane.purge.main"]}),
+            "commit abc123\nAuthor: Khushal Kumar\nfix: add tenant purge\n",
+        ]
+    )
+    commands = []
+
+    def runner(command, **kwargs):
+        commands.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout=next(outputs), stderr="")
+
+    backend = StubBackend()
+    investigator = EvidenceInvestigator(tmp_path, backend, runner=runner)
+
+    causes = investigator.investigate(_violated_report())
+
+    assert len(causes) == 2
+    assert commands[0][:3] == ["entire", "graph", "search"]
+    assert commands[1][:3] == ["entire", "graph", "impact"]
+    assert commands[2][:3] == ["git", "log", "-L"]
 
 
 def _violated_report() -> PromiseReport:

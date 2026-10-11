@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
 
@@ -19,6 +21,94 @@ Every root cause must point to one repository-relative file and give a narrow, t
 Do not propose a fix for missing authority, policy conflicts, or migrations that require human
 approval.
 """
+
+Runner = Callable[..., subprocess.CompletedProcess[str]]
+
+
+class EvidenceInvestigator:
+    def __init__(
+        self,
+        target_root: Path,
+        backend: JsonBackend,
+        *,
+        runner: Runner = subprocess.run,
+    ) -> None:
+        self.target_root = target_root.resolve()
+        self.backend = backend
+        self.runner = runner
+
+    def investigate(self, report: PromiseReport) -> list[RootCause]:
+        query = " ".join(
+            run.effective_result.detail
+            for run in report.runs
+            if run.effective_result.outcome is ProbeOutcome.FAIL
+        )[:1000]
+        search = self._run(
+            [
+                "entire",
+                "graph",
+                "search",
+                "--repo",
+                str(self.target_root),
+                "--profile",
+                "full",
+                "--format",
+                "json",
+                "--top-k",
+                "5",
+                "--query",
+                query,
+            ]
+        )
+        results = json.loads(search.stdout).get("results", [])
+        if not results:
+            raise ValueError("Entire Graph returned no evidence for the violation")
+        top = results[0]
+        symbol = str(top.get("symbol_name") or f"{top['file_path']}:{top['start_line']}")
+        impact = self._run(
+            [
+                "entire",
+                "graph",
+                "impact",
+                "--repo",
+                str(self.target_root),
+                "--symbol",
+                symbol,
+                "--profile",
+                "full",
+                "--format",
+                "json",
+            ]
+        )
+        line_range = f"{top['start_line']},{top['end_line']}:{top['file_path']}"
+        history = self._run(
+            [
+                "git",
+                "log",
+                "-L",
+                line_range,
+                "--format=commit %H%nAuthor: %an <%ae>%n%s",
+                "-n",
+                "5",
+            ]
+        )
+        return investigate_violation(
+            report,
+            target_root=self.target_root,
+            backend=self.backend,
+            entire_context=impact.stdout[:20_000],
+            git_context=history.stdout[:20_000],
+        )
+
+    def _run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+        return self.runner(
+            command,
+            cwd=self.target_root,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
 
 
 @neatlogs.span(kind="AGENT", name="violation_investigator")
