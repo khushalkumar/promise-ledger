@@ -31,4 +31,4 @@ The purge hit identifies the exact function containing the deliberately omitted 
 
 ## Checkpoint boundary
 
-The read-only checks currently return no captured checkpoints or sessions, and `entire status` reports that seven Codex hooks need user approval. Hook approval is intentionally not bypassed. Before submission, approve the hooks, capture one final implementation checkpoint, and export `entire checkpoint list --json` plus `entire checkpoint explain <id>` here. Until that happens, this file claims verified Entire Graph runtime use and committed configuration, not checkpoint provenance.
+The seven Codex hooks were reviewed and approved on October 11, 2026, and the approval warning is gone. This post-approval session is being used to produce the final checkpoint evidence. No checkpoint ID is claimed yet.
