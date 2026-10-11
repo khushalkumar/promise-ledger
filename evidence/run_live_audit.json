@@ -11,13 +11,13 @@
           "audit events",
           "exports",
           "attachments",
-          "backups"
+          "backups controlled by Tasklane"
         ],
         "trigger": "termination of the Services",
         "deadline_days": 30,
         "source": {
           "document": "Northwind_DPA_v3.pdf",
-          "clause": "7.2",
+          "clause": "7.2 Deletion and backup retention",
           "text": "Following termination of the Services, Tasklane will delete Northwind's customer personal data within 30 days. Deletion includes application records, audit events, exports, attachments, and backups controlled by Tasklane."
         }
       },
@@ -55,7 +55,7 @@
           "params": {
             "table": "attachments",
             "deadline_days": 30,
-            "now": "2026-10-11T02:57:38.933022+00:00"
+            "now": "2026-10-11T03:34:13.324927+00:00"
           },
           "depends_on": [
             "attachments",
@@ -70,7 +70,7 @@
           "params": {
             "table": "audit_events",
             "deadline_days": 30,
-            "now": "2026-10-11T02:57:38.933022+00:00"
+            "now": "2026-10-11T03:34:13.324927+00:00"
           },
           "depends_on": [
             "audit_events",
@@ -85,7 +85,7 @@
           "params": {
             "table": "comments",
             "deadline_days": 30,
-            "now": "2026-10-11T02:57:38.933022+00:00"
+            "now": "2026-10-11T03:34:13.324927+00:00"
           },
           "depends_on": [
             "comments",
@@ -100,7 +100,7 @@
           "params": {
             "table": "invites",
             "deadline_days": 30,
-            "now": "2026-10-11T02:57:38.933022+00:00"
+            "now": "2026-10-11T03:34:13.324927+00:00"
           },
           "depends_on": [
             "invites",
@@ -115,7 +115,7 @@
           "params": {
             "table": "tasks",
             "deadline_days": 30,
-            "now": "2026-10-11T02:57:38.933022+00:00"
+            "now": "2026-10-11T03:34:13.324927+00:00"
           },
           "depends_on": [
             "tasks",
@@ -130,24 +130,11 @@
           "params": {
             "table": "users",
             "deadline_days": 30,
-            "now": "2026-10-11T02:57:38.933022+00:00"
+            "now": "2026-10-11T03:34:13.324927+00:00"
           },
           "depends_on": [
             "users",
             "tenants"
-          ],
-          "fallback": null
-        },
-        {
-          "id": "P-014-config-backups",
-          "kind": "config",
-          "template": "terraform.maximum_retention",
-          "params": {
-            "path": "infra/storage.tf",
-            "maximum_days": 30
-          },
-          "depends_on": [
-            "infra/storage.tf"
           ],
           "fallback": null
         }
@@ -222,16 +209,6 @@
             "trace_id": null
           },
           "fallback": null
-        },
-        {
-          "primary": {
-            "probe_id": "P-014-config-backups",
-            "outcome": "fail",
-            "evidence_sha256": "78a29a286e963222ea96e499c9b6b68c7cf3a59374ccbff39e53087c72cd6381",
-            "detail": "configured retention is 90 days; contract maximum is 30",
-            "trace_id": null
-          },
-          "fallback": null
         }
       ],
       "verdict": "violated"
@@ -241,13 +218,13 @@
         "id": "P-017",
         "kind": "retention_limit",
         "actor": "Tasklane",
-        "object": "database snapshots and retained backups",
+        "object": "database snapshots and other retained backups",
         "includes": [],
         "trigger": null,
         "deadline_days": 30,
         "source": {
           "document": "Northwind_DPA_v3.pdf",
-          "clause": "7.2",
+          "clause": "7.2 Deletion and backup retention",
           "text": "Database snapshots and other retained backups must not remain available beyond the same 30-day period."
         }
       },
@@ -310,7 +287,7 @@
         "deadline_days": null,
         "source": {
           "document": "Northwind_DPA_v3.pdf",
-          "clause": "9.1",
+          "clause": "9.1 Data residency",
           "text": "Customer personal data belonging to Northwind's European users will be stored and processed only in eu-west-1."
         }
       },
@@ -350,13 +327,13 @@
         "id": "P-031",
         "kind": "notice_period",
         "actor": "Tasklane",
-        "object": "addition of a new subprocessor",
+        "object": "new subprocessor addition",
         "includes": [],
         "trigger": "before adding a new subprocessor",
         "deadline_days": 30,
         "source": {
           "document": "Northwind_DPA_v3.pdf",
-          "clause": "11.3",
+          "clause": "11.3 Subprocessor notice",
           "text": "Tasklane will notify Northwind at least 30 days before adding a new subprocessor and will maintain a current subprocessor list available to Northwind."
         }
       },
@@ -500,7 +477,7 @@
         "source": {
           "document": "Acme_MSA_2026.pdf",
           "clause": "8.1",
-          "text": "Tasklane will encrypt customer data at rest"
+          "text": "Tasklane will encrypt customer data at rest and require multi-factor authentication for administrative accounts."
         }
       },
       "probes": [
@@ -545,7 +522,7 @@
         "source": {
           "document": "Acme_MSA_2026.pdf",
           "clause": "8.1",
-          "text": "Tasklane will ... require multi-factor authentication for administrative accounts."
+          "text": "Tasklane will encrypt customer data at rest and require multi-factor authentication for administrative accounts."
         }
       },
       "probes": [
@@ -592,7 +569,7 @@
         "deadline_days": 90,
         "source": {
           "document": "privacy_policy.md",
-          "clause": "5. Data retention",
+          "clause": "5",
           "text": "Tasklane may retain customer personal data and backups for up to 90 days before permanent deletion."
         }
       },
@@ -636,5 +613,13 @@
       "verdict": "violated",
       "detail": "Northwind_DPA_v3.pdf limits overlapping data to 30 days, but privacy_policy.md allows 90 days"
     }
-  ]
+  ],
+  "metrics": {
+    "documents": 3,
+    "promises": 9,
+    "llm_calls": 3,
+    "prompt_tokens": 2886,
+    "completion_tokens": 965,
+    "total_tokens": 3851
+  }
 }

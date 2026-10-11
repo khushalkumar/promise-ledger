@@ -1,10 +1,11 @@
 import json
+from types import SimpleNamespace
 
 import pytest
 
 from ledger.agents.extractor import extract_promises
 from ledger.documents import LoadedDocument, load_document
-from ledger.llm import AzureConfig
+from ledger.llm import AzureConfig, AzureJsonBackend
 from ledger.models import PromiseKind
 
 
@@ -162,3 +163,29 @@ def test_azure_config_reports_missing_names_without_values(monkeypatch):
     assert "PROMISE_LEDGER_AZURE_ENDPOINT" in message
     assert "PROMISE_LEDGER_AZURE_API_KEY" in message
     assert "sk-" not in message
+
+
+def test_azure_backend_records_provider_usage():
+    completion = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content='{"promises": []}'))],
+        usage=SimpleNamespace(prompt_tokens=1200, completion_tokens=180, total_tokens=1380),
+    )
+    client = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(create=lambda **kwargs: completion),
+        )
+    )
+    config = AzureConfig(
+        endpoint="https://example.openai.azure.com",
+        api_key="test-only",
+        deployment="test-deployment",
+        api_version="2025-01-01-preview",
+    )
+    backend = AzureJsonBackend(config, client=client)
+
+    backend.complete_json("system", "user")
+
+    assert backend.usage.calls == 1
+    assert backend.usage.prompt_tokens == 1200
+    assert backend.usage.completion_tokens == 180
+    assert backend.usage.total_tokens == 1380

@@ -1,0 +1,4 @@
+scenario,monitored_contracts,monthly_price_per_contract_usd,audits_per_contract_per_month,prompt_tokens_per_audit,completion_tokens_per_audit,assumed_input_price_per_million_usd,assumed_output_price_per_million_usd,measured_model_cost_per_audit_usd,monthly_model_api_cost_usd,monthly_observability_cost_usd,monthly_infrastructure_cost_usd,monthly_support_and_ops_cogs_usd,monthly_revenue_usd,total_cogs_usd,gross_margin_percent,monthly_operating_expenses_usd,monthly_net_cash_flow_usd,starting_cash_usd,runway_months
+downside,25,49,6,2886,965,2.50,10.00,0.016865,2.53,0.75,250,250,1225,503.28,58.92,5000,-4278.28,50000,11.69
+base,200,39,8,2886,965,2.50,10.00,0.016865,26.98,8.00,650,1200,7800,1884.98,75.83,12000,-6084.98,50000,8.22
+growth,1000,29,10,2886,965,2.50,10.00,0.016865,168.65,50.00,1800,4500,29000,6518.65,77.52,22000,481.35,50000,not_applicable

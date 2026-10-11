@@ -186,3 +186,5 @@ def test_audit_command_extracts_assigns_and_verifies_in_one_run(tmp_path, monkey
     assert "P-014  violated" in result.output
     audit = json.loads(output.read_text())
     assert audit["reports"][0]["promise"]["id"] == "P-014"
+    assert audit["metrics"]["documents"] == 1
+    assert audit["metrics"]["promises"] == 1

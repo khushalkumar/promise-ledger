@@ -8,7 +8,7 @@ import typer
 from ledger.agents.extractor import extract_promises
 from ledger.documents import load_document
 from ledger.llm import AzureJsonBackend
-from ledger.models import Promise
+from ledger.models import Promise, RunMetrics
 from ledger.orchestrator import run_ledger
 from ledger.probes.executors import ProbeContext
 from ledger.registry import assign_canonical_ids, load_registry
@@ -73,6 +73,15 @@ def audit_command(
         extracted = _extract_documents(document, backend)
         promises = assign_canonical_ids(extracted, load_registry(registry))
         ledger_run = run_ledger(promises, ProbeContext(target_root=target, database=database))
+        usage = getattr(backend, "usage", None)
+        ledger_run.metrics = RunMetrics(
+            documents=len(document),
+            promises=len(promises),
+            llm_calls=getattr(usage, "calls", len(document)),
+            prompt_tokens=getattr(usage, "prompt_tokens", 0),
+            completion_tokens=getattr(usage, "completion_tokens", 0),
+            total_tokens=getattr(usage, "total_tokens", 0),
+        )
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(ledger_run.model_dump_json(indent=2) + "\n")
         for report in ledger_run.reports:

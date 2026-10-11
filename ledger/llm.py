@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import Any
 
 from openai import AzureOpenAI
 
@@ -28,14 +29,21 @@ class AzureConfig:
         return cls(**values)  # type: ignore[arg-type]
 
 
+@dataclass
+class TokenUsage:
+    calls: int = 0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
 class AzureJsonBackend:
-    def __init__(self, config: AzureConfig) -> None:
+    def __init__(self, config: AzureConfig, *, client: Any | None = None) -> None:
         self._deployment = config.deployment
-        self._client = AzureOpenAI(
-            api_key=config.api_key,
-            azure_endpoint=config.endpoint,
-            api_version=config.api_version,
+        self._client = client or AzureOpenAI(
+            api_key=config.api_key, azure_endpoint=config.endpoint, api_version=config.api_version
         )
+        self.usage = TokenUsage()
 
     @classmethod
     def from_env(cls) -> AzureJsonBackend:
@@ -53,4 +61,15 @@ class AzureJsonBackend:
         content = completion.choices[0].message.content
         if not content:
             raise ValueError("Azure OpenAI returned an empty response")
+        usage = completion.usage
+        prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
+        completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
+        total_tokens = int(
+            getattr(usage, "total_tokens", prompt_tokens + completion_tokens)
+            or prompt_tokens + completion_tokens
+        )
+        self.usage.calls += 1
+        self.usage.prompt_tokens += prompt_tokens
+        self.usage.completion_tokens += completion_tokens
+        self.usage.total_tokens += total_tokens
         return content

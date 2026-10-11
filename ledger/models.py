@@ -99,6 +99,16 @@ class PromiseConflict(BaseModel):
     detail: str
 
 
+class RunMetrics(BaseModel):
+    documents: int
+    promises: int
+    llm_calls: int
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
 class LedgerRun(BaseModel):
     reports: list[PromiseReport]
     conflicts: list[PromiseConflict] = Field(default_factory=list)
+    metrics: RunMetrics | None = None
