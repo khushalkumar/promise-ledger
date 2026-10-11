@@ -6,7 +6,7 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ledger.models import AgentChange, RootCause
 
@@ -14,6 +14,8 @@ Runner = Callable[..., subprocess.CompletedProcess[str]]
 
 
 class AgentChangeOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     summary: str
     changed_files: list[str]
     tests: list[str]
@@ -63,7 +65,12 @@ class CodexCodingAgent:
                     timeout=self.timeout_seconds,
                 )
             except subprocess.CalledProcessError as error:
-                detail = (error.stderr or error.stdout or f"exit code {error.returncode}").strip()
+                streams = [
+                    stream.strip()
+                    for stream in (error.stdout, error.stderr)
+                    if stream and stream.strip()
+                ]
+                detail = "\n".join(streams) or f"exit code {error.returncode}"
                 raise RuntimeError(f"Codex coding agent failed: {detail[-4000:]}") from error
             output = AgentChangeOutput.model_validate_json(output_path.read_text())
 

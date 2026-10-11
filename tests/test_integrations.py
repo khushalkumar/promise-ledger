@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ledger.integrations.codex import CodexCodingAgent
+from ledger.integrations.codex import AgentChangeOutput, CodexCodingAgent
 from ledger.integrations.github import GhPullRequests
 from ledger.integrations.workspace import GitWorkspace
 from ledger.models import RootCause
@@ -19,6 +19,12 @@ class RecordingRunner:
         self.commands.append((command, kwargs))
         output = next(self.outputs)
         return subprocess.CompletedProcess(command, 0, stdout=output, stderr="")
+
+
+def test_codex_output_schema_is_strict_for_responses_api():
+    schema = AgentChangeOutput.model_json_schema()
+
+    assert schema["additionalProperties"] is False
 
 
 def test_gh_pull_requests_reuses_open_branch_without_creating_duplicate():
@@ -192,7 +198,12 @@ def test_codex_coding_agent_surfaces_cli_failure_without_command_dump(tmp_path):
     worktree.mkdir()
 
     def runner(command, **kwargs):
-        raise subprocess.CalledProcessError(2, command, stderr="Hooks need review")
+        raise subprocess.CalledProcessError(
+            2,
+            command,
+            output='{"type":"error","message":"Agent startup failed"}',
+            stderr="Hooks need review",
+        )
 
     agent = CodexCodingAgent(binary="codex", runner=runner)
     cause = RootCause(
@@ -205,5 +216,5 @@ def test_codex_coding_agent_surfaces_cli_failure_without_command_dump(tmp_path):
         fix_goal="Fix bug.",
     )
 
-    with pytest.raises(RuntimeError, match="Codex coding agent failed: Hooks need review"):
+    with pytest.raises(RuntimeError, match="(?s)Agent startup failed.*Hooks need review"):
         agent.implement(worktree=worktree, root_cause=cause, prompt="Fix it")
