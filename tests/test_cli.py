@@ -4,7 +4,7 @@ from typer.testing import CliRunner
 
 from ledger.cli import app
 from ledger.llm import AzureJsonBackend
-from ledger.models import Promise, PromiseKind, SourceSpan
+from ledger.models import AutonomousRunResult, Promise, PromiseKind, SourceSpan
 from tests.test_orchestrator import demo_context, promise
 
 
@@ -198,3 +198,100 @@ def test_audit_command_extracts_assigns_and_verifies_in_one_run(tmp_path, monkey
     assert audit["reports"][0]["promise"]["id"] == "P-014"
     assert audit["metrics"]["documents"] == 1
     assert audit["metrics"]["promises"] == 1
+
+
+def test_agent_run_command_wires_audit_remediation_and_output(tmp_path, monkeypatch):
+    context = demo_context(tmp_path / "target")
+    document = tmp_path / "contract.md"
+    document.write_text("## 7.2\nDelete customer data within 30 days, including backups.\n")
+    registry = tmp_path / "registry.json"
+    registry.write_text(
+        json.dumps({"contract.md|7.2|deletion_deadline": "P-014"})
+    )
+
+    class StubBackend:
+        usage = type(
+            "Usage",
+            (),
+            {"calls": 2, "prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        )()
+
+        def complete_json(self, system: str, user: str) -> str:
+            if "safe candidate probes" in system:
+                request = json.loads(user)
+                return json.dumps(
+                    {
+                        "selected_probe_ids": [
+                            probe["id"] for probe in request["safe_candidate_probes"]
+                        ],
+                        "grounding_notes": "Every grounded probe is required.",
+                    }
+                )
+            return json.dumps(
+                {
+                    "promises": [
+                        {
+                            "kind": "deletion_deadline",
+                            "actor": "Tasklane",
+                            "object": "customer data",
+                            "includes": ["backups"],
+                            "trigger": "contract.terminated",
+                            "deadline_days": 30,
+                            "clause": "7.2",
+                            "text": "Delete customer data within 30 days, including backups.",
+                        }
+                    ]
+                }
+            )
+
+    monkeypatch.setattr(
+        AzureJsonBackend,
+        "from_env",
+        classmethod(lambda cls: StubBackend()),
+    )
+
+    def fake_remediate(self, *, run_id, target_repository, baseline):
+        assert target_repository == "khushalkumar/tasklane-demo"
+        assert baseline.metrics is not None
+        assert baseline.metrics.llm_calls == 2
+        return AutonomousRunResult(
+            run_id=run_id,
+            baseline=baseline,
+            root_causes=[],
+            remediations=[],
+            rechecked=baseline,
+        )
+
+    monkeypatch.setattr(
+        "ledger.cli.AutonomousWorkflow.remediate",
+        fake_remediate,
+    )
+    output = tmp_path / "agent-run.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "agent-run",
+            "--target",
+            str(context.target_root),
+            "--database",
+            str(context.database),
+            "--document",
+            str(document),
+            "--registry",
+            str(registry),
+            "--repository",
+            "khushalkumar/tasklane-demo",
+            "--state-database",
+            f"sqlite:///{tmp_path / 'state.db'}",
+            "--worktree-root",
+            str(tmp_path / "worktrees"),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(output.read_text())
+    assert payload["baseline"]["reports"][0]["promise"]["id"] == "P-014"
+    assert payload["run_id"].startswith("pl-")
