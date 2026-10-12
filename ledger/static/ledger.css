@@ -162,6 +162,53 @@ h1 {
   border-left: 1px solid var(--rule);
 }
 
+.candidate-strip {
+  margin: 0 0 42px;
+  padding: 24px clamp(22px, 4vw, 42px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  color: #4f3100;
+  background: var(--amber-soft);
+  border: 1px solid #d9b66e;
+  border-left: 6px solid var(--amber);
+}
+
+.candidate-strip h2 {
+  margin-bottom: 8px;
+  font-family: var(--display);
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 1;
+}
+
+.candidate-strip p:last-child {
+  max-width: 760px;
+  margin-bottom: 0;
+}
+
+.candidate-action {
+  min-width: 230px;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.candidate-action strong {
+  font-family: var(--utility);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.candidate-action a {
+  padding-bottom: 2px;
+  color: #684100;
+  font-weight: 700;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
 .tally {
   min-height: 104px;
   padding: 18px;
@@ -474,6 +521,11 @@ blockquote footer {
   .run-thesis,
   .conflict-strip {
     grid-template-columns: 1fr;
+  }
+
+  .candidate-strip {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .conflict-label {

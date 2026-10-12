@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 import ledger.web
 from ledger.agent_service import AgentRunController
-from ledger.models import LedgerRun, WorkflowStage
+from ledger.models import LedgerRun, ProbeOutcome, Verdict, WorkflowStage
 from ledger.store import RunStore
 from ledger.web import create_app
 from tests.test_investigator import _violated_report
@@ -89,6 +89,53 @@ def test_ledger_page_renders_latest_durable_run_without_json_file(tmp_path):
     assert response.status_code == 200
     assert "P-014" in response.text
     assert "run-cloud" in response.text
+
+
+def test_ledger_page_separates_current_main_from_unmerged_candidate(tmp_path):
+    store = RunStore(f"sqlite:///{tmp_path / 'state.db'}")
+    store.create_run("run-pending", target_repository="khushalkumar/tasklane-demo")
+    baseline_report = _violated_report()
+    candidate_report = baseline_report.model_copy(
+        update={
+            "runs": [
+                run.model_copy(
+                    update={
+                        "primary": run.primary.model_copy(
+                            update={"outcome": ProbeOutcome.PASS}
+                        )
+                    }
+                )
+                for run in baseline_report.runs
+            ],
+            "verdict": Verdict.HOLDS,
+        }
+    )
+    store.save_ledger_result(
+        "run-pending",
+        phase="baseline",
+        ledger=LedgerRun(reports=[baseline_report]),
+    )
+    store.record_stage(
+        "run-pending",
+        WorkflowStage.PULL_REQUESTS_OPEN,
+        {"pull_requests": ["https://github.com/khushalkumar/tasklane-demo/pull/7"]},
+    )
+    store.save_ledger_result(
+        "run-pending",
+        phase="final",
+        ledger=LedgerRun(reports=[candidate_report]),
+    )
+
+    response = TestClient(create_app(store=store)).get("/")
+
+    assert response.status_code == 200
+    assert "Current main" in response.text
+    assert "1 red signal" in response.text
+    assert "Candidate after PR" in response.text
+    assert "0 red signals" in response.text
+    assert "Awaiting human merge" in response.text
+    assert "https://github.com/khushalkumar/tasklane-demo/pull/7" in response.text
+    assert "violated" in response.text
 
 
 def test_health_endpoint_does_not_load_evidence(tmp_path):
