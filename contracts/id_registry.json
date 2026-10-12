@@ -7,7 +7,5 @@
   "Acme_MSA_2026.pdf|6.2|availability_slo": "P-041",
   "Acme_MSA_2026.pdf|8.1|encryption_at_rest": "P-042",
   "Acme_MSA_2026.pdf|8.1|admin_mfa": "P-043",
-  "privacy_policy.md|5|retention_limit": "P-044",
-  "Zenith_DPA_v1.md|5.2|deletion_deadline": "P-045",
-  "Zenith_DPA_v1.md|5.2|retention_limit": "P-046"
+  "privacy_policy.md|5|retention_limit": "P-044"
 }
