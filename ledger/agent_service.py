@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import threading
 from collections.abc import Callable
 from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
+
+
+class TriggerKind(StrEnum):
+    MANUAL = "manual"
+    NEW_CONTRACT = "new_contract"
+    DEPLOY = "deploy"
+    INFRA_CHANGE = "infra_change"
+    NIGHTLY = "nightly"
 
 
 class AgentRunController:
@@ -24,28 +35,49 @@ class AgentRunController:
         self.run_id_factory = run_id_factory or _new_run_id
         self.synchronous = synchronous
         self._lock = threading.Lock()
-        self._status: dict[str, str] = {"run_id": "", "status": "idle"}
+        self._status: dict[str, object] = {"run_id": "", "status": "idle"}
 
-    def start(self) -> dict[str, str]:
+    def start(
+        self,
+        *,
+        trigger_kind: TriggerKind = TriggerKind.MANUAL,
+        trigger_payload: dict[str, Any] | None = None,
+    ) -> dict[str, object]:
         with self._lock:
             if self._status["status"] == "running":
                 raise RuntimeError("an autonomous run is already in progress")
             run_id = self.run_id_factory()
             self._status = {"run_id": run_id, "status": "running"}
+            if trigger_kind is not TriggerKind.MANUAL:
+                self._status["trigger"] = trigger_kind.value
 
         if self.synchronous:
-            self._execute(run_id)
+            self._execute(run_id, trigger_kind, trigger_payload or {})
         else:
-            threading.Thread(target=self._execute, args=(run_id,), daemon=True).start()
+            threading.Thread(
+                target=self._execute,
+                args=(run_id, trigger_kind, trigger_payload or {}),
+                daemon=True,
+            ).start()
         return self.status()
 
-    def status(self) -> dict[str, str]:
+    def status(self) -> dict[str, object]:
         with self._lock:
             return dict(self._status)
 
-    def _execute(self, run_id: str) -> None:
+    def _execute(
+        self,
+        run_id: str,
+        trigger_kind: TriggerKind,
+        trigger_payload: dict[str, Any],
+    ) -> None:
         environment = os.environ.copy()
         environment["PROMISE_LEDGER_RUN_ID"] = run_id
+        environment["PROMISE_LEDGER_TRIGGER_KIND"] = trigger_kind.value
+        environment["PROMISE_LEDGER_TRIGGER_PAYLOAD"] = json.dumps(
+            trigger_payload,
+            sort_keys=True,
+        )
         try:
             completed = self.runner(
                 self.command,
@@ -64,10 +96,13 @@ class AgentRunController:
         self._finish(run_id, "failed", detail)
 
     def _finish(self, run_id: str, status: str, detail: str | None = None) -> None:
-        payload = {"run_id": run_id, "status": status}
-        if detail:
-            payload["detail"] = detail
         with self._lock:
+            payload: dict[str, object] = {"run_id": run_id, "status": status}
+            trigger = self._status.get("trigger")
+            if trigger is not None:
+                payload["trigger"] = trigger
+            if detail:
+                payload["detail"] = detail
             self._status = payload
 
 

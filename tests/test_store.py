@@ -35,6 +35,28 @@ def test_create_run_flushes_parent_before_foreign_key_event():
     assert created.events[0].stage is WorkflowStage.CREATED
 
 
+def test_create_run_persists_trigger_provenance():
+    store = RunStore("sqlite:///:memory:")
+
+    created = store.create_run(
+        "run-triggered",
+        target_repository="owner/repository",
+        trigger={
+            "kind": "infra_change",
+            "source_repository": "owner/repository",
+            "sha": "a" * 40,
+        },
+    )
+
+    assert created.events[0].payload == {
+        "trigger": {
+            "kind": "infra_change",
+            "source_repository": "owner/repository",
+            "sha": "a" * 40,
+        }
+    }
+
+
 def test_run_store_records_probe_dependencies_for_selective_recheck(tmp_path):
     store = RunStore(f"sqlite:///{tmp_path / 'ledger-state.db'}")
     store.create_run("run-123", target_repository="khushalkumar/tasklane-demo")

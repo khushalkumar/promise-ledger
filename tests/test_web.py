@@ -100,6 +100,15 @@ def test_health_endpoint_does_not_load_evidence(tmp_path):
     assert response.json() == {"status": "ok"}
 
 
+def test_health_endpoint_reports_live_render_revision(monkeypatch, tmp_path):
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "a" * 40)
+
+    response = TestClient(create_app(tmp_path / "unused.json")).get("/healthz")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "revision": "a" * 40}
+
+
 def test_main_uses_render_port_when_promise_ledger_port_is_unset(monkeypatch, tmp_path):
     calls = []
     monkeypatch.setenv("PROMISE_LEDGER_RUN", str(tmp_path / "run.json"))
@@ -177,6 +186,63 @@ def test_agent_run_trigger_rejects_parallel_run(tmp_path):
     )
 
     assert response.status_code == 409
+
+
+def test_production_trigger_records_kind_and_source_in_agent_environment(tmp_path):
+    calls = []
+
+    def runner(command, **kwargs):
+        calls.append((command, kwargs))
+        return subprocess.CompletedProcess(command, 0, stdout="completed", stderr="")
+
+    controller = AgentRunController(
+        command=["run-agent"],
+        runner=runner,
+        run_id_factory=lambda: "pl-trigger-test",
+        synchronous=True,
+    )
+    evidence = tmp_path / "run.json"
+    evidence.write_text(json.dumps({"reports": [], "conflicts": []}))
+    client = TestClient(
+        create_app(evidence, agent_controller=controller, trigger_token="top-secret")
+    )
+
+    response = client.post(
+        "/api/triggers/infra_change",
+        headers={"Authorization": "Bearer top-secret"},
+        json={
+            "source_repository": "khushalkumar/tasklane-render-smoke",
+            "ref": "refs/heads/main",
+            "sha": "b" * 40,
+        },
+    )
+
+    assert response.status_code == 202
+    assert response.json()["trigger"] == "infra_change"
+    environment = calls[0][1]["env"]
+    assert environment["PROMISE_LEDGER_TRIGGER_KIND"] == "infra_change"
+    assert json.loads(environment["PROMISE_LEDGER_TRIGGER_PAYLOAD"]) == {
+        "source_repository": "khushalkumar/tasklane-render-smoke",
+        "ref": "refs/heads/main",
+        "sha": "b" * 40,
+    }
+
+
+def test_production_trigger_rejects_unknown_kind(tmp_path):
+    controller = AgentRunController(command=["ignored"])
+    evidence = tmp_path / "run.json"
+    evidence.write_text(json.dumps({"reports": [], "conflicts": []}))
+    client = TestClient(
+        create_app(evidence, agent_controller=controller, trigger_token="top-secret")
+    )
+
+    response = client.post(
+        "/api/triggers/arbitrary",
+        headers={"Authorization": "Bearer top-secret"},
+        json={},
+    )
+
+    assert response.status_code == 422
 
 
 def test_agent_run_status_includes_persisted_workflow_progress(tmp_path):

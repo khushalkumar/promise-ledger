@@ -1,0 +1,107 @@
+name: Production triggers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "contracts/**"
+  schedule:
+    # 02:30 Asia/Kolkata (GitHub schedules use UTC).
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+    inputs:
+      trigger:
+        description: Production trigger to run
+        required: true
+        default: nightly
+        type: choice
+        options:
+          - nightly
+          - new_contract
+          - deploy
+          - infra_change
+          - manual
+
+permissions:
+  contents: read
+
+concurrency:
+  group: promise-ledger-production-trigger
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Select trigger
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_TRIGGER: ${{ inputs.trigger }}
+        run: |
+          if [[ "${EVENT_NAME}" == "schedule" ]]; then
+            trigger_kind="nightly"
+            trigger_path="/api/triggers/nightly"
+          elif [[ "${EVENT_NAME}" == "push" ]]; then
+            trigger_kind="new_contract"
+            trigger_path="/api/triggers/new_contract"
+          else
+            trigger_kind="${REQUESTED_TRIGGER}"
+            trigger_path="/api/triggers/${REQUESTED_TRIGGER}"
+          fi
+          echo "kind=${trigger_kind}" >> "${GITHUB_OUTPUT}"
+          echo "path=${trigger_path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Wait for the contract revision to be live
+        if: steps.select.outputs.kind == 'new_contract'
+        env:
+          SERVICE_URL: https://promise-ledger.onrender.com
+          EXPECTED_REVISION: ${{ github.sha }}
+        run: |
+          for attempt in {1..60}; do
+            revision="$(curl --fail --silent --show-error "${SERVICE_URL}/healthz" | jq -r '.revision // empty')"
+            if [[ "${revision}" == "${EXPECTED_REVISION}" ]]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Render did not reach RENDER_GIT_COMMIT=${EXPECTED_REVISION}" >&2
+          exit 1
+
+      - name: Start hosted Promise Ledger run
+        env:
+          SERVICE_URL: https://promise-ledger.onrender.com
+          TRIGGER_PATH: ${{ steps.select.outputs.path }}
+          TRIGGER_TOKEN: ${{ secrets.PROMISE_LEDGER_TRIGGER_TOKEN }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          SOURCE_REF: ${{ github.ref }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          payload="$(jq -n \
+            --arg source_repository "${SOURCE_REPOSITORY}" \
+            --arg ref "${SOURCE_REF}" \
+            --arg sha "${SOURCE_SHA}" \
+            '{source_repository: $source_repository, ref: $ref, sha: $sha}')"
+          for attempt in {1..20}; do
+            http_status="$(curl --silent --show-error \
+              --output response.json \
+              --write-out "%{http_code}" \
+              --request POST \
+              --header "Authorization: Bearer ${TRIGGER_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --data "${payload}" \
+              "${SERVICE_URL}${TRIGGER_PATH}")"
+            if [[ "${http_status}" == "202" ]]; then
+              cat response.json
+              exit 0
+            fi
+            if [[ "${http_status}" != "409" ]]; then
+              cat response.json >&2
+              exit 1
+            fi
+            echo "Another run is active; retrying trigger in 30 seconds."
+            sleep 30
+          done
+          echo "Timed out waiting for the active Promise Ledger run." >&2
+          exit 1

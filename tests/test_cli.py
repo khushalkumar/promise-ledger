@@ -6,6 +6,7 @@ from typer.testing import CliRunner
 from ledger.cli import app
 from ledger.llm import AzureJsonBackend
 from ledger.models import AutonomousRunResult, Promise, PromiseKind, SourceSpan
+from ledger.store import RunStore
 from tests.test_orchestrator import demo_context, promise
 
 
@@ -267,7 +268,18 @@ def test_agent_run_command_wires_audit_remediation_and_output(tmp_path, monkeypa
         "ledger.cli.AutonomousWorkflow.remediate",
         fake_remediate,
     )
+    monkeypatch.setenv("PROMISE_LEDGER_TRIGGER_KIND", "deploy")
+    monkeypatch.setenv(
+        "PROMISE_LEDGER_TRIGGER_PAYLOAD",
+        json.dumps(
+            {
+                "source_repository": "khushalkumar/tasklane-demo",
+                "sha": "c" * 40,
+            }
+        ),
+    )
     output = tmp_path / "agent-run.json"
+    state_database = f"sqlite:///{tmp_path / 'state.db'}"
 
     result = CliRunner().invoke(
         app,
@@ -284,7 +296,7 @@ def test_agent_run_command_wires_audit_remediation_and_output(tmp_path, monkeypa
             "--repository",
             "khushalkumar/tasklane-demo",
             "--state-database",
-            f"sqlite:///{tmp_path / 'state.db'}",
+            state_database,
             "--worktree-root",
             str(tmp_path / "worktrees"),
             "--output",
@@ -296,6 +308,15 @@ def test_agent_run_command_wires_audit_remediation_and_output(tmp_path, monkeypa
     payload = json.loads(output.read_text())
     assert payload["baseline"]["reports"][0]["promise"]["id"] == "P-014"
     assert payload["run_id"].startswith("pl-")
+    persisted = RunStore(state_database).get_run(payload["run_id"])
+    assert persisted is not None
+    assert persisted.events[0].payload == {
+        "trigger": {
+            "kind": "deploy",
+            "source_repository": "khushalkumar/tasklane-demo",
+            "sha": "c" * 40,
+        }
+    }
 
 
 def test_render_agent_script_uses_azure_codex_and_stable_run_id():
@@ -318,3 +339,18 @@ def test_render_trigger_script_keeps_token_out_of_command_line():
     assert "/api/agent-runs/status" in script
     assert "Render stage:" in script
     assert "PROMISE_LEDGER_TRIGGER_TOKEN=" not in script
+
+
+def test_production_trigger_workflow_covers_contracts_and_nightly():
+    workflow = Path(__file__).parents[1] / ".github/workflows/production-triggers.yml"
+
+    assert workflow.exists(), "production trigger workflow is missing"
+    source = workflow.read_text()
+    assert "contracts/**" in source
+    assert "0 21 * * *" in source
+    assert "/api/triggers/new_contract" in source
+    assert "/api/triggers/nightly" in source
+    assert "PROMISE_LEDGER_TRIGGER_TOKEN" in source
+    assert "RENDER_GIT_COMMIT" in source
+    assert '"409"' in source
+    assert "sleep 30" in source

@@ -111,6 +111,15 @@ PROMISE_LEDGER_RUN=evidence/run_live_audit.json uv run ledger-ui
 
 Then visit `http://127.0.0.1:8000`.
 
+## Production on Render
+
+The live service is <https://promise-ledger.onrender.com>. Production automation runs without a
+laptop: contract commits wait for the exact Render revision and then start a `new_contract` audit;
+Tasklane main-branch pushes start either a `deploy` or `infra_change` audit; and GitHub Actions
+starts a `nightly` audit at 02:30 Asia/Kolkata. Each request is bearer-authenticated, records its
+source repository, ref, commit, and trigger kind in durable run history, and waits if another audit
+is already active.
+
 ## Production on GCP
 
 The production path uses Cloud Run services, an autonomous Cloud Run Job, Cloud SQL PostgreSQL 16,

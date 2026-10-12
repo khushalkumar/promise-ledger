@@ -12,11 +12,20 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, ConfigDict, Field
 
-from ledger.agent_service import AgentRunController
+from ledger.agent_service import AgentRunController, TriggerKind
 from ledger.store import RunStore
 
 PACKAGE_ROOT = Path(__file__).parent
+
+
+class TriggerRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_repository: str | None = Field(default=None, max_length=200)
+    ref: str | None = Field(default=None, max_length=300)
+    sha: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
 
 
 def create_app(
@@ -35,7 +44,11 @@ def create_app(
 
     @app.get("/healthz")
     def health() -> dict[str, str]:
-        return {"status": "ok"}
+        payload = {"status": "ok"}
+        revision = os.getenv("RENDER_GIT_COMMIT")
+        if revision:
+            payload["revision"] = revision
+        return payload
 
     @app.get("/", response_class=HTMLResponse)
     def ledger_page(request: Request) -> HTMLResponse:
@@ -82,6 +95,23 @@ def create_app(
             raise HTTPException(status_code=503, detail="Autonomous runs are not enabled")
         try:
             return agent_controller.start()
+        except RuntimeError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post("/api/triggers/{trigger_kind}", status_code=status.HTTP_202_ACCEPTED)
+    def start_triggered_agent_run(
+        trigger_kind: TriggerKind,
+        trigger_request: TriggerRequest,
+        request: Request,
+    ) -> dict[str, object]:
+        _authorize_agent_request(request, trigger_token)
+        if agent_controller is None:
+            raise HTTPException(status_code=503, detail="Autonomous runs are not enabled")
+        try:
+            return agent_controller.start(
+                trigger_kind=trigger_kind,
+                trigger_payload=trigger_request.model_dump(exclude_none=True),
+            )
         except RuntimeError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
 

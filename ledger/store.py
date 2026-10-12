@@ -51,7 +51,13 @@ class RunStore:
         self.engine = create_engine(database_url, connect_args=connect_args)
         SQLModel.metadata.create_all(self.engine)
 
-    def create_run(self, run_id: str, *, target_repository: str) -> WorkflowRun:
+    def create_run(
+        self,
+        run_id: str,
+        *,
+        target_repository: str,
+        trigger: dict[str, object] | None = None,
+    ) -> WorkflowRun:
         now = datetime.now(UTC)
         with Session(self.engine) as session:
             if session.get(RunRow, run_id) is not None:
@@ -70,7 +76,7 @@ class RunStore:
                 RunEventRow(
                     run_id=run_id,
                     stage=WorkflowStage.CREATED.value,
-                    payload={},
+                    payload={"trigger": trigger} if trigger else {},
                     created_at=now,
                 )
             )

@@ -249,12 +249,13 @@ The initial proof rendered saved JSON and used manually prepared remediation PRs
 
 The cloud job clones Tasklane, seeds its database, and starts `agent-run`. The CLI either loads a durable baseline for the requested run ID or extracts three documents, applies stable IDs, inventories Tasklane, asks the grounded compiler to validate its safe candidates, and executes bounded read-only probes. The verdict engine stores the baseline. For safe deletion violations, Entire and git evidence constrain the investigator; stable root causes drive isolated Codex worktrees. Each change is tested, committed with the configured Git identity, pushed, and opened as a normal GitHub PR. A clean worktree combines all commit SHAs, runs the target's own verification recipe, and rechecks only affected probes. The final ledger is stored in PostgreSQL/SQLite, linked to Neatlogs traces, returned as JSON, and served by the UI and `/api/runs/latest`.
 
-## 18. Render hackathon deployment
+## 18. Render production deployment
 
-The Render web service serves the evidence UI and also exposes two administrator-only
-endpoints:
+The Render web service serves the evidence UI and exposes administrator-only endpoints:
 
 - `POST /api/agent-runs` starts one autonomous run in a background thread.
+- `POST /api/triggers/{kind}` starts a typed `new_contract`, `deploy`, `infra_change`,
+  `nightly`, or `manual` run and persists its GitHub source metadata.
 - `GET /api/agent-runs/status` returns the current process status.
 
 Both require `Authorization: Bearer <PROMISE_LEDGER_TRIGGER_TOKEN>`. Parallel starts
@@ -262,6 +263,20 @@ return HTTP 409. `scripts/render-agent-run.sh` clones the configured private tar
 seeds an isolated target database, and invokes `ledger agent-run` with a stable run ID.
 The UI reads the latest completed result from Render Postgres and falls back to the
 checked-in verified evidence before the first completed hosted run.
+
+The production trigger matrix is fully hosted:
+
+| Event | Owner | Production action |
+|---|---|---|
+| Contract added or changed | Promise Ledger GitHub Actions | Wait for `/healthz` to report the pushed Render revision, then call `new_contract`. |
+| Tasklane main-branch push outside `infra/` | Tasklane GitHub Actions | Call `deploy` with the source ref and commit. |
+| Tasklane main-branch push touching `infra/` | Tasklane GitHub Actions | Call `infra_change` with the source ref and commit. |
+| 02:30 Asia/Kolkata daily | Promise Ledger GitHub Actions | Call `nightly` against the current production revision. |
+
+Both private repositories hold the same `PROMISE_LEDGER_TRIGGER_TOKEN` as an Actions secret.
+The token is never placed in source or command-line arguments. Trigger workflows retry HTTP 409
+responses so a simultaneous deploy and nightly event waits for the active audit instead of being
+dropped.
 
 This is a zero-cost hackathon deployment, not an always-on production SLA. Render's
 free web instance can spin down, and its free Postgres instance expires after 30 days.

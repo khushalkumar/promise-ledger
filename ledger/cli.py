@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import typer
 
+from ledger.agent_service import TriggerKind
 from ledger.agents.compiler_agent import compile_checks_with_agent
 from ledger.agents.extractor import extract_promises
 from ledger.agents.investigator import EvidenceInvestigator
@@ -45,6 +46,15 @@ def _extract_documents(document: list[Path], backend: AzureJsonBackend) -> list[
             )
         )
     return promises
+
+
+def _trigger_context_from_environment() -> dict[str, object]:
+    kind = TriggerKind(os.getenv("PROMISE_LEDGER_TRIGGER_KIND", TriggerKind.MANUAL.value))
+    raw_payload = os.getenv("PROMISE_LEDGER_TRIGGER_PAYLOAD", "{}")
+    payload = json.loads(raw_payload)
+    if not isinstance(payload, dict):
+        raise ValueError("PROMISE_LEDGER_TRIGGER_PAYLOAD must be a JSON object")
+    return {**payload, "kind": kind.value}
 
 
 @app.command("extract")
@@ -156,7 +166,11 @@ def agent_run_command(
         backend = AzureJsonBackend.from_env()
         if baseline is None:
             if existing is None:
-                store.create_run(run_id, target_repository=repository)
+                store.create_run(
+                    run_id,
+                    target_repository=repository,
+                    trigger=_trigger_context_from_environment(),
+                )
             store.record_stage(
                 run_id,
                 WorkflowStage.EXTRACTING,
