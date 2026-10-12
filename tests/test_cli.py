@@ -329,6 +329,8 @@ def test_render_agent_script_uses_azure_codex_and_stable_run_id():
     assert "OPENAI_API_KEY" not in script
     assert '--run-id "${run_id}"' in script
     assert 'gh repo clone "${TARGET_REPOSITORY}"' in script
+    assert "ledger list-contracts" in script
+    assert "/app/contracts/Northwind_DPA_v3.pdf" not in script
 
 
 def test_render_trigger_script_keeps_token_out_of_command_line():

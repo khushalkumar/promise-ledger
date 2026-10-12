@@ -43,12 +43,20 @@ gh auth setup-git
 gh repo clone "${TARGET_REPOSITORY}" "${target}" -- --depth=100
 uv run --project "${target}" tasklane-seed "${target_database}"
 
+mapfile -t documents < <(ledger list-contracts --directory /app/contracts)
+if [[ "${#documents[@]}" -eq 0 ]]; then
+  echo "No contract documents found in /app/contracts" >&2
+  exit 2
+fi
+document_arguments=()
+for document in "${documents[@]}"; do
+  document_arguments+=(--document "${document}")
+done
+
 exec ledger agent-run \
   --target "${target}" \
   --database "${target_database}" \
-  --document /app/contracts/Northwind_DPA_v3.pdf \
-  --document /app/contracts/Acme_MSA_2026.pdf \
-  --document /app/contracts/privacy_policy.md \
+  "${document_arguments[@]}" \
   --registry /app/contracts/id_registry.json \
   --repository "${TARGET_REPOSITORY}" \
   --state-database "${PROMISE_LEDGER_STATE_DATABASE}" \

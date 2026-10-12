@@ -13,7 +13,7 @@ from ledger.agents.extractor import extract_promises
 from ledger.agents.investigator import EvidenceInvestigator
 from ledger.agents.remediator import RemediationAgent
 from ledger.benchmark import compare_compilers
-from ledger.documents import load_document
+from ledger.documents import discover_contracts, load_document
 from ledger.integrations.codex import CodexCodingAgent
 from ledger.integrations.github import GhPullRequests
 from ledger.integrations.recheck import ConfiguredRechecker
@@ -28,6 +28,15 @@ from ledger.tracing import finish_tracing, initialize_tracing
 from ledger.workflow import AutonomousWorkflow
 
 app = typer.Typer(no_args_is_help=True)
+
+
+@app.command("list-contracts")
+def list_contracts_command(
+    directory: Annotated[Path, typer.Option(exists=True, file_okay=False)],
+) -> None:
+    """Print the canonical contract inputs in deterministic order."""
+    for path in discover_contracts(directory):
+        typer.echo(path)
 
 
 @app.callback()
