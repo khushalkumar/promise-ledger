@@ -91,6 +91,42 @@ def test_static_probe_resolves_imported_tenant_table_registry(tmp_path):
     assert detail == "purge covers every required tenant table"
 
 
+def test_static_probe_resolves_dependency_ordered_registry_iteration(tmp_path):
+    database_module = tmp_path / "tasklane" / "db.py"
+    database_module.parent.mkdir()
+    database_module.write_text(
+        'users = Table("users")\n'
+        'tasks = Table("tasks")\n'
+        'audit_events = Table("audit_events")\n'
+        "TENANT_TABLES = {table.name: table for table in (users, tasks, audit_events)}\n"
+    )
+    source = tmp_path / "tasklane" / "jobs" / "purge_tenant.py"
+    source.parent.mkdir()
+    source.write_text(
+        "from tasklane.db import TENANT_TABLES, tenants\n"
+        "tenant_tables = set(TENANT_TABLES.values())\n"
+        "deletion_plan = (\n"
+        "    table\n"
+        "    for table in reversed(tenants.metadata.sorted_tables)\n"
+        "    if table in tenant_tables\n"
+        ")\n"
+        "for table in deletion_plan:\n"
+        "    delete(table)\n"
+    )
+    probe = make_probe(
+        "static.purge_covers_tables",
+        {
+            "path": "tasklane/jobs/purge_tenant.py",
+            "required_tables": ["users", "tasks", "audit_events"],
+        },
+    )
+
+    outcome, detail = execute_probe(probe, context(tmp_path))
+
+    assert outcome is ProbeOutcome.PASS
+    assert detail == "purge covers every required tenant table"
+
+
 def test_static_probe_does_not_treat_partial_registry_lookup_as_full_coverage(tmp_path):
     database_module = tmp_path / "tasklane" / "db.py"
     database_module.parent.mkdir()

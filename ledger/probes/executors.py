@@ -173,7 +173,7 @@ def _imported_tenant_registry_tables(tree: ast.AST, target_root: Path) -> set[st
 
 
 def _iterates_entire_registry(tree: ast.AST, name: str) -> bool:
-    return any(
+    direct_iteration = any(
         isinstance(node, ast.For)
         and isinstance(node.iter, ast.Call)
         and not node.iter.args
@@ -183,6 +183,70 @@ def _iterates_entire_registry(tree: ast.AST, name: str) -> bool:
         and isinstance(node.iter.func.value, ast.Name)
         and node.iter.func.value.id == name
         for node in ast.walk(tree)
+    )
+    if direct_iteration:
+        return True
+
+    registry_sets = {
+        target.id
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Name)
+        and node.value.func.id == "set"
+        and len(node.value.args) == 1
+        and not node.value.keywords
+        and _is_registry_values_call(node.value.args[0], name)
+        for target in node.targets
+        if isinstance(target, ast.Name)
+    }
+    deletion_plans = {
+        target.id
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and _is_complete_registry_filter(node.value, registry_sets)
+        for target in node.targets
+        if isinstance(target, ast.Name)
+    }
+    return any(
+        isinstance(node, ast.For)
+        and isinstance(node.iter, ast.Name)
+        and node.iter.id in deletion_plans
+        for node in ast.walk(tree)
+    )
+
+
+def _is_registry_values_call(node: ast.AST, name: str) -> bool:
+    return (
+        isinstance(node, ast.Call)
+        and not node.args
+        and not node.keywords
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "values"
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == name
+    )
+
+
+def _is_complete_registry_filter(node: ast.AST, registry_sets: set[str]) -> bool:
+    if not isinstance(node, ast.GeneratorExp) or len(node.generators) != 1:
+        return False
+    generator = node.generators[0]
+    if not isinstance(generator.target, ast.Name) or len(generator.ifs) != 1:
+        return False
+    item_name = generator.target.id
+    condition = generator.ifs[0]
+    return (
+        isinstance(node.elt, ast.Name)
+        and node.elt.id == item_name
+        and isinstance(condition, ast.Compare)
+        and isinstance(condition.left, ast.Name)
+        and condition.left.id == item_name
+        and len(condition.ops) == 1
+        and isinstance(condition.ops[0], ast.In)
+        and len(condition.comparators) == 1
+        and isinstance(condition.comparators[0], ast.Name)
+        and condition.comparators[0].id in registry_sets
     )
 
 
