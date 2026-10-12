@@ -330,6 +330,9 @@ def test_render_agent_script_uses_azure_codex_and_stable_run_id():
     assert '--run-id "${run_id}"' in script
     assert 'gh repo clone "${TARGET_REPOSITORY}"' in script
     assert "ledger list-contracts" in script
+    assert 'contract_root="${target}/contracts"' in script
+    assert 'registry="${contract_root}/id_registry.json"' in script
+    assert "--directory /app/contracts" not in script
     assert "/app/contracts/Northwind_DPA_v3.pdf" not in script
 
 
@@ -343,14 +346,15 @@ def test_render_trigger_script_keeps_token_out_of_command_line():
     assert "PROMISE_LEDGER_TRIGGER_TOKEN=" not in script
 
 
-def test_production_trigger_workflow_covers_contracts_and_nightly():
+def test_production_trigger_workflow_covers_nightly_and_manual_runs():
     workflow = Path(__file__).parents[1] / ".github/workflows/production-triggers.yml"
 
     assert workflow.exists(), "production trigger workflow is missing"
     source = workflow.read_text()
-    assert "contracts/**" in source
+    assert "contracts/**" not in source
     assert "0 21 * * *" in source
-    assert "/api/triggers/new_contract" in source
+    assert "- new_contract" in source
+    assert 'trigger_path="/api/triggers/${REQUESTED_TRIGGER}"' in source
     assert "/api/triggers/nightly" in source
     assert "PROMISE_LEDGER_TRIGGER_TOKEN" in source
     assert "RENDER_GIT_COMMIT" in source

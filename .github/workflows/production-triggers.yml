@@ -1,10 +1,6 @@
 name: Production triggers
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "contracts/**"
   schedule:
     # 02:30 Asia/Kolkata (GitHub schedules use UTC).
     - cron: "0 21 * * *"
@@ -43,9 +39,6 @@ jobs:
           if [[ "${EVENT_NAME}" == "schedule" ]]; then
             trigger_kind="nightly"
             trigger_path="/api/triggers/nightly"
-          elif [[ "${EVENT_NAME}" == "push" ]]; then
-            trigger_kind="new_contract"
-            trigger_path="/api/triggers/new_contract"
           else
             trigger_kind="${REQUESTED_TRIGGER}"
             trigger_path="/api/triggers/${REQUESTED_TRIGGER}"

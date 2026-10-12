@@ -29,6 +29,8 @@ mkdir -p "${workspace}"
 run_id="${PROMISE_LEDGER_RUN_ID}"
 run_root="${workspace%/}/${run_id}"
 target="${run_root}/tasklane-demo"
+contract_root="${target}/contracts"
+registry="${contract_root}/id_registry.json"
 worktrees="${run_root}/worktrees"
 output="${run_root}/run-autonomous.json"
 target_database="${run_root}/tasklane.db"
@@ -43,9 +45,13 @@ gh auth setup-git
 gh repo clone "${TARGET_REPOSITORY}" "${target}" -- --depth=100
 uv run --project "${target}" tasklane-seed "${target_database}"
 
-mapfile -t documents < <(ledger list-contracts --directory /app/contracts)
+mapfile -t documents < <(ledger list-contracts --directory "${contract_root}")
 if [[ "${#documents[@]}" -eq 0 ]]; then
-  echo "No contract documents found in /app/contracts" >&2
+  echo "No contract documents found in ${contract_root}" >&2
+  exit 2
+fi
+if [[ ! -f "${registry}" ]]; then
+  echo "Contract registry not found: ${registry}" >&2
   exit 2
 fi
 document_arguments=()
@@ -57,7 +63,7 @@ exec ledger agent-run \
   --target "${target}" \
   --database "${target_database}" \
   "${document_arguments[@]}" \
-  --registry /app/contracts/id_registry.json \
+  --registry "${registry}" \
   --repository "${TARGET_REPOSITORY}" \
   --state-database "${PROMISE_LEDGER_STATE_DATABASE}" \
   --worktree-root "${worktrees}" \
