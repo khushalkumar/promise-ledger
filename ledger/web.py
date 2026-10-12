@@ -52,7 +52,7 @@ def create_app(
 
     @app.get("/", response_class=HTMLResponse)
     def ledger_page(request: Request) -> HTMLResponse:
-        evidence, evidence_name = _load_evidence(evidence_path, store)
+        evidence, evidence_name, candidate = _load_ui_evidence(evidence_path, store)
         reports = evidence["reports"]
         for report in reports:
             for run in report["runs"]:
@@ -67,19 +67,17 @@ def create_app(
                     trace_url_template,
                 )
         verdict_counts = Counter(report["verdict"] for report in reports)
-        conflict_count = sum(
-            conflict["verdict"] == "violated" for conflict in evidence["conflicts"]
-        )
         context = {
             "request": request,
             "reports": reports,
             "conflicts": evidence["conflicts"],
             "counts": verdict_counts,
-            "red_signals": verdict_counts["violated"] + conflict_count,
+            "red_signals": _red_signal_count(evidence),
             "document_count": len(
                 {report["promise"]["source"]["document"] for report in reports}
             ),
             "evidence_name": evidence_name,
+            "candidate": candidate,
         }
         return templates.TemplateResponse(request=request, name="ledger.html", context=context)
 
@@ -156,6 +154,40 @@ def _load_evidence(
     if evidence_path is None:
         raise HTTPException(status_code=503, detail="No completed ledger run is available")
     return json.loads(evidence_path.read_text()), evidence_path.name
+
+
+def _load_ui_evidence(
+    evidence_path: Path | None,
+    store: RunStore | None,
+) -> tuple[dict[str, object], str, dict[str, object] | None]:
+    evidence, evidence_name = _load_evidence(evidence_path, store)
+    if store is None:
+        return evidence, evidence_name, None
+
+    workflow = store.get_run(evidence_name)
+    baseline = store.ledger_result(evidence_name, phase="baseline")
+    pull_requests = [] if workflow is None else [
+        url
+        for event in workflow.events
+        for url in event.payload.get("pull_requests", [])
+        if isinstance(url, str)
+    ]
+    if baseline is None or not pull_requests:
+        return evidence, evidence_name, None
+
+    candidate = {
+        "red_signals": _red_signal_count(evidence),
+        "pull_requests": pull_requests,
+    }
+    return baseline.model_dump(mode="json"), evidence_name, candidate
+
+
+def _red_signal_count(evidence: dict[str, object]) -> int:
+    reports = evidence["reports"]
+    conflicts = evidence["conflicts"]
+    return sum(report["verdict"] == "violated" for report in reports) + sum(
+        conflict["verdict"] == "violated" for conflict in conflicts
+    )
 
 
 def _authorize_agent_request(request: Request, trigger_token: str | None) -> None:

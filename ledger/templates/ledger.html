@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Promise Ledger - Evidence-backed contract checks</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="{{ url_for('static', path='/ledger.css') }}">
   </head>
   <body>
@@ -17,7 +18,7 @@
       </a>
       <div class="run-meta">
         <span class="pulse" aria-hidden="true"></span>
-        <span>Verified artifact</span>
+        <span>{% if candidate %}Current main + verified candidate{% else %}Current main verified{% endif %}</span>
         <code>{{ evidence_name }}</code>
       </div>
     </header>
@@ -25,18 +26,22 @@
     <main id="top">
       <section class="run-thesis" aria-labelledby="run-title">
         <div>
-          <p class="eyebrow">Tasklane / live contract audit</p>
-          <h1 id="run-title">Every promise gets a chain of proof.</h1>
+          <p class="eyebrow">Tasklane / current main audit</p>
+          <h1 id="run-title">{% if candidate %}Current truth. Proposed recovery.{% else %}Every promise gets a chain of proof.{% endif %}</h1>
           <p class="lede">
-            Three agreements became nine testable obligations. The ledger keeps the clause,
-            system evidence, recovery path, and verdict together so every red signal can be
-            challenged.
+            {% if candidate %}
+            The current branch remains the source of truth. A candidate result is shown separately
+            until a human merges the remediation and a new audit verifies main.
+            {% else %}
+            The ledger keeps each clause, system evidence, recovery path, and verdict together so
+            every signal can be challenged.
+            {% endif %}
           </p>
         </div>
         <dl class="run-tally" aria-label="Audit summary">
           <div class="tally tally-alert">
-            <dt>Red signals</dt>
-            <dd>{{ red_signals }}</dd>
+            <dt>Current main</dt>
+            <dd>{{ red_signals }} red signal{{ '' if red_signals == 1 else 's' }}</dd>
           </div>
           <div class="tally">
             <dt>Promises</dt>
@@ -52,6 +57,22 @@
           </div>
         </dl>
       </section>
+
+      {% if candidate %}
+      <section class="candidate-strip" aria-labelledby="candidate-title">
+        <div>
+          <p class="eyebrow">Proposed remediation · not deployed</p>
+          <h2 id="candidate-title">Candidate after PR: {{ candidate.red_signals }} red signals</h2>
+          <p>The agent verified the proposed commits in an isolated worktree. Current main stays red until the PR is merged and audited again.</p>
+        </div>
+        <div class="candidate-action">
+          <strong>Awaiting human merge</strong>
+          {% for pull_request in candidate.pull_requests %}
+          <a href="{{ pull_request }}" target="_blank" rel="noopener noreferrer">Review remediation PR</a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
       {% if conflicts %}
       <section class="conflict-strip" aria-labelledby="conflict-title">
@@ -73,7 +94,7 @@
         <header class="section-heading">
           <div>
             <p class="eyebrow">Evidence register</p>
-            <h2 id="ledger-title">Nine promises, no hidden reasoning</h2>
+            <h2 id="ledger-title">{{ reports|length }} promise{{ '' if reports|length == 1 else 's' }}, no hidden reasoning</h2>
           </div>
           <div class="legend" aria-label="Verdict legend">
             <span><i class="dot holds"></i>Holds</span>
