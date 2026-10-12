@@ -354,3 +354,4 @@ def test_production_trigger_workflow_covers_contracts_and_nightly():
     assert "RENDER_GIT_COMMIT" in source
     assert '"409"' in source
     assert "sleep 30" in source
+    assert "timeout-minutes: 25" in source
