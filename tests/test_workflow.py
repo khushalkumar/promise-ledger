@@ -187,3 +187,95 @@ def test_autonomous_workflow_never_auto_remediates_data_residency(tmp_path):
     )
 
     assert investigated == ["P-014"]
+
+
+def test_autonomous_workflow_prefers_stricter_overlapping_remediation(tmp_path):
+    thirty_day = _violated_report()
+    fifteen_day = thirty_day.model_copy(
+        update={
+            "promise": thirty_day.promise.model_copy(
+                update={"id": "P-045", "deadline_days": 15}
+            ),
+            "probes": [
+                probe.model_copy(update={"id": probe.id.replace("P-014", "P-045")})
+                for probe in thirty_day.probes
+            ],
+            "runs": [
+                run.model_copy(
+                    update={
+                        "primary": run.primary.model_copy(
+                            update={
+                                "probe_id": run.primary.probe_id.replace("P-014", "P-045")
+                            }
+                        )
+                    }
+                )
+                for run in thirty_day.runs
+            ],
+        }
+    )
+    remediated = []
+    rechecks = []
+
+    class OverlappingInvestigator:
+        def investigate(self, report):
+            promise_id = report.promise.id
+            return [
+                RootCause(
+                    id=f"rc-{promise_id.lower()}-purge",
+                    promise_id=promise_id,
+                    probe_ids=[f"{promise_id}-static-purge"],
+                    category="source_code",
+                    file_path="tasklane/jobs/purge_tenant.py",
+                    summary="Purge cutoff is too long.",
+                    fix_goal=f"Enforce the {report.promise.deadline_days}-day cutoff.",
+                )
+            ]
+
+    class RecordingRemediator:
+        def remediate(self, *, run_id, root_cause, contract_text):
+            remediated.append(root_cause.promise_id)
+            return RemediationResult(
+                root_cause=root_cause,
+                change=None,
+                pull_request=PullRequestRef(
+                    number=45,
+                    url="https://github.com/khushalkumar/tasklane-demo/pull/45",
+                    branch="promise-ledger/p-045-purge",
+                    commit_sha="commit-p-045",
+                    created=True,
+                ),
+            )
+
+    class RecordingRechecker:
+        def recheck(self, *, baseline, affected_probe_ids, commit_shas):
+            rechecks.append((affected_probe_ids, commit_shas))
+            return baseline
+
+    workflow = AutonomousWorkflow(
+        store=RunStore(f"sqlite:///{tmp_path / 'state.db'}"),
+        investigator=OverlappingInvestigator(),
+        remediator=RecordingRemediator(),
+        rechecker=RecordingRechecker(),
+    )
+
+    workflow.remediate(
+        run_id="run-overlap",
+        target_repository="khushalkumar/tasklane-demo",
+        baseline=LedgerRun(reports=[thirty_day, fifteen_day], conflicts=[]),
+    )
+
+    assert remediated == ["P-045"]
+    assert rechecks == [
+        (
+            [
+                "P-014-config-backups",
+                "P-014-data-audit_events",
+                "P-014-static-purge",
+                "P-045-config-backups",
+                "P-045-data-audit_events",
+                "P-045-static-purge",
+            ],
+            ["commit-p-045"],
+        )
+    ]

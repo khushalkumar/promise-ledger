@@ -44,6 +44,27 @@ class Rechecker(Protocol):
 SAFE_AUTO_REMEDIATION_KINDS = {PromiseKind.DELETION_DEADLINE}
 
 
+def _prefer_stricter_overlapping_causes(
+    root_causes: list[RootCause],
+    reports: dict[str, PromiseReport],
+) -> list[RootCause]:
+    selected: dict[tuple[str, PromiseKind], RootCause] = {}
+    for cause in root_causes:
+        promise = reports[cause.promise_id].promise
+        key = (cause.file_path, promise.kind)
+        existing = selected.get(key)
+        if existing is None:
+            selected[key] = cause
+            continue
+        existing_deadline = reports[existing.promise_id].promise.deadline_days
+        candidate_deadline = promise.deadline_days
+        if candidate_deadline is not None and (
+            existing_deadline is None or candidate_deadline < existing_deadline
+        ):
+            selected[key] = cause
+    return list(selected.values())
+
+
 class AutonomousWorkflow:
     def __init__(
         self,
@@ -97,18 +118,25 @@ class AutonomousWorkflow:
                 WorkflowStage.INVESTIGATING,
                 {"promise_ids": [report.promise.id for report in violated]},
             )
-            root_causes = [
+            candidate_root_causes = [
                 cause
                 for report in violated
                 for cause in self.investigator.investigate(report)
             ]
+            reports = {report.promise.id: report for report in baseline.reports}
+            root_causes = _prefer_stricter_overlapping_causes(
+                candidate_root_causes,
+                reports,
+            )
+            remediated_promise_ids = {
+                cause.promise_id for cause in candidate_root_causes
+            }
 
             self.store.record_stage(
                 run_id,
                 WorkflowStage.REMEDIATING,
                 {"root_cause_ids": [cause.id for cause in root_causes]},
             )
-            reports = {report.promise.id: report for report in baseline.reports}
             remediations = [
                 self.remediator.remediate(
                     run_id=run_id,
@@ -128,7 +156,6 @@ class AutonomousWorkflow:
                 },
             )
             changed_dependencies = sorted({cause.file_path for cause in root_causes})
-            remediated_promise_ids = {cause.promise_id for cause in root_causes}
             affected_probe_ids = sorted(
                 {
                     *self.store.affected_probe_ids(run_id, changed_dependencies),
